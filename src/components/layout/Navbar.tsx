@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Wallet, CreditCard, Receipt, TrendingUp, Upload } from "lucide-react";
+import { LayoutDashboard, Wallet, CreditCard, Receipt, TrendingUp, Upload, Landmark } from "lucide-react";
 
 export function Navbar() {
   const pathname = usePathname();
@@ -12,6 +12,7 @@ export function Navbar() {
     { name: "Data", href: "/data", icon: Upload },
     { name: "Income", href: "/income", icon: Wallet },
     { name: "Expenses", href: "/expenses", icon: CreditCard },
+    { name: "Loans", href: "/loans", icon: Landmark },
     { name: "Taxes", href: "/taxes", icon: Receipt },
     { name: "Wealth", href: "/wealth", icon: TrendingUp },
   ];

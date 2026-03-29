@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useWealth, WealthRecord, WealthMonth, sortWealthMonths } from "@/context/WealthContext";
 import { PieChart, Pie, Cell, LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { ChevronLeft, ChevronRight, TrendingUp, PieChart as PieIcon, LineChart as LineChartIcon, Table as TableIcon } from "lucide-react";
+import { LoanSummaryWidget } from "@/components/loans/LoanSummaryWidget";
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16', '#ef4444', '#14b8a6', '#6366f1'];
 
@@ -270,6 +271,9 @@ export default function HomeDashboard() {
           </div>
         </div>
       </div>
+
+      {/* LOAN SUMMARY WIDGET */}
+      <LoanSummaryWidget />
 
       {/* FINAL DISTRIBUTION TABLE */}
       {fyMonths.length > 0 && (
