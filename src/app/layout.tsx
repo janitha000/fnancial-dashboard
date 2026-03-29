@@ -6,6 +6,8 @@ import { FinanceProvider } from "@/context/FinanceContext";
 import { WealthProvider } from "@/context/WealthContext";
 import { LoanProvider } from "@/context/LoanContext";
 import { TaxProvider } from "@/context/TaxContext";
+import { ExpenseProvider } from "@/context/ExpenseContext";
+import { IncomeProvider } from "@/context/IncomeContext";
 import { checkAuth } from "@/actions/auth";
 import { LockScreen } from "@/components/auth/LockScreen";
 
@@ -43,10 +45,14 @@ export default async function RootLayout({
             <WealthProvider>
               <LoanProvider>
                 <TaxProvider>
-                  <Navbar />
-                  <main className="flex-1 p-4 md:p-6 md:p-8 max-w-7xl mx-auto w-full relative z-10 [&_.bg-card]:backdrop-blur-xl [&_.bg-card]:shadow-2xl [&_.bg-card]:shadow-black/20 [&_.bg-card]:border-white/10">
-                    {children}
-                  </main>
+                  <IncomeProvider>
+                    <ExpenseProvider>
+                      <Navbar />
+                      <main className="flex-1 p-4 md:p-6 md:p-8 max-w-7xl mx-auto w-full relative z-10 [&_.bg-card]:backdrop-blur-xl [&_.bg-card]:shadow-2xl [&_.bg-card]:shadow-black/20 [&_.bg-card]:border-white/10">
+                        {children}
+                      </main>
+                    </ExpenseProvider>
+                  </IncomeProvider>
                 </TaxProvider>
               </LoanProvider>
             </WealthProvider>

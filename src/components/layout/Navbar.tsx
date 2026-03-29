@@ -2,14 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Wallet, CreditCard, Receipt, TrendingUp, Upload, Landmark } from "lucide-react";
+import { LayoutDashboard, Wallet, CreditCard, Receipt, TrendingUp, Landmark } from "lucide-react";
 
 export function Navbar() {
   const pathname = usePathname();
 
   const links = [
     { name: "Dashboard", href: "/", icon: LayoutDashboard },
-    { name: "Data", href: "/data", icon: Upload },
     { name: "Income", href: "/income", icon: Wallet },
     { name: "Expenses", href: "/expenses", icon: CreditCard },
     { name: "Loans", href: "/loans", icon: Landmark },

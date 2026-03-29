@@ -42,6 +42,17 @@ export function currentFinancialYear(): string {
   return m >= 3 ? `${y}/${y + 1}` : `${y - 1}/${y}`;
 }
 
+/** Returns the current month name as per FINANCIAL_YEAR_MONTHS, e.g. "Apr" */
+export function currentFinancialMonth(): (typeof FINANCIAL_YEAR_MONTHS)[number] {
+  const now = new Date();
+  const m = now.getMonth(); // 0-indexed, Jan = 0, Apr = 3
+  // FINANCIAL_YEAR_MONTHS = ["Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", "Jan", "Feb", "Mar"]
+  // Index mapping:
+  // Jan(0) -> 9, Feb(1) -> 10, Mar(2) -> 11, Apr(3) -> 0, May(4) -> 1, ...
+  const index = (m + 9) % 12; 
+  return FINANCIAL_YEAR_MONTHS[index];
+}
+
 /** Generate a list of FY options, newest first */
 export function generateFinancialYears(count = 4): string[] {
   const now = new Date();
