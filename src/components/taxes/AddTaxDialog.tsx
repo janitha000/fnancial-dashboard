@@ -29,6 +29,17 @@ export function AddTaxDialog({ open, onClose }: AddTaxDialogProps) {
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  // Auto-calculate tax for Passive Income
+  React.useEffect(() => {
+    if (incomeType === "Passive Income" && totalIncome) {
+      const income = Number(totalIncome);
+      if (!isNaN(income)) {
+        const rate = passiveCategory === "LKR FD" ? 0.25 : 0.36;
+        setTaxPaid((income * rate).toFixed(0));
+      }
+    }
+  }, [incomeType, passiveCategory, totalIncome]);
+
   const validate = () => {
     const e: Record<string, string> = {};
     if (!month) e.month = "Select a month";
@@ -176,7 +187,9 @@ export function AddTaxDialog({ open, onClose }: AddTaxDialogProps) {
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="tax-paid">Tax Paid (LKR)</Label>
+              <Label htmlFor="tax-paid">
+                {incomeType === "Salary" ? "Tax Paid (LKR)" : "Tax Payable - Pending (LKR)"}
+              </Label>
               <Input
                 id="tax-paid"
                 type="number"

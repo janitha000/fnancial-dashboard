@@ -20,7 +20,7 @@ import {
 import {
   Receipt, Plus, Trash2, TrendingDown, Wallet, PiggyBank,
 } from "lucide-react";
-import { useTax, FINANCIAL_YEAR_MONTHS } from "@/context/TaxContext";
+import { useTax, FINANCIAL_YEAR_MONTHS, type TaxRecord } from "@/context/TaxContext";
 import { AddTaxDialog } from "@/components/taxes/AddTaxDialog";
 
 // ─── Palette ──────────────────────────────────────────────────────────────────
@@ -108,10 +108,14 @@ export default function TaxesPage() {
   const [deleting, setDeleting] = useState<string | null>(null);
   const [viewUser, setViewUser] = useState<string>("Total");
 
+  // Ledger-specific filters
+  const [tableUserFilter, setTableUserFilter] = useState<string>("All");
+  const [tableTypeFilter, setTableTypeFilter] = useState<string>("All");
+
   // Records filtered to selected FY and optionally by User
   const fyRecords = useMemo(
     () => {
-      const yearFiltered = taxRecords.filter((r) => r.financialYear === selectedYear);
+      const yearFiltered = taxRecords.filter((r: TaxRecord) => r.financialYear === selectedYear);
       if (viewUser === "Total") return yearFiltered;
       return yearFiltered.filter((r) => r.user === viewUser);
     },
@@ -119,27 +123,38 @@ export default function TaxesPage() {
   );
 
   // ── KPI totals ────────────────────────────────────────────────────────────
-  const { salaryTax, passiveTax, grandTotal } = useMemo(() => {
-    let salaryTax = 0;
-    let passiveTax = 0;
+  const { salaryTaxPaid, passiveTaxPending, totalLiability } = useMemo(() => {
+    let salaryTaxPaid = 0;
+    let passiveTaxPending = 0;
     fyRecords.forEach((r) => {
-      if (r.incomeType === "Salary") salaryTax += r.taxPaid;
-      else passiveTax += r.taxPaid;
+      if (r.incomeType === "Salary") salaryTaxPaid += r.taxPaid;
+      else passiveTaxPending += r.taxPaid;
     });
-    return { salaryTax, passiveTax, grandTotal: salaryTax + passiveTax };
+    return { salaryTaxPaid, passiveTaxPending, totalLiability: salaryTaxPaid + passiveTaxPending };
   }, [fyRecords]);
 
-  // ── Monthly chart data (non-cumulative, by user) ──────────────────────────
+  // ── Monthly chart data (Salary vs Passive breakdown) ─────────────────────
   const monthlyUserData = useMemo(() => {
     return FINANCIAL_YEAR_MONTHS.map((m) => {
       const row: Record<string, any> = { month: m };
       const monthRecs = fyRecords.filter((r) => r.month === m);
-      const janitha = monthRecs.filter((r) => r.user === "Janitha").reduce((s, r) => s + r.taxPaid, 0);
-      const vindya  = monthRecs.filter((r) => r.user === "Vindya").reduce((s, r) => s + r.taxPaid, 0);
-      row["Janitha"] = janitha;
-      row["Vindya"]  = vindya;
+      
+      const janSalary = monthRecs.filter((r) => r.user === "Janitha" && r.incomeType === "Salary").reduce((s, r) => s + r.taxPaid, 0);
+      const janPassive = monthRecs.filter((r) => r.user === "Janitha" && r.incomeType === "Passive Income").reduce((s, r) => s + r.taxPaid, 0);
+      
+      const vinSalary = monthRecs.filter((r) => r.user === "Vindya" && r.incomeType === "Salary").reduce((s, r) => s + r.taxPaid, 0);
+      const vinPassive = monthRecs.filter((r) => r.user === "Vindya" && r.incomeType === "Passive Income").reduce((s, r) => s + r.taxPaid, 0);
+
+      row["Janitha_Salary"] = janSalary;
+      row["Janitha_Passive"] = janPassive;
+      row["Vindya_Salary"] = vinSalary;
+      row["Vindya_Passive"] = vinPassive;
+      
       return row;
-    }).filter((r) => r["Janitha"] > 0 || r["Vindya"] > 0);
+    }).filter((r) => 
+      r["Janitha_Salary"] > 0 || r["Janitha_Passive"] > 0 || 
+      r["Vindya_Salary"] > 0 || r["Vindya_Passive"] > 0
+    );
   }, [fyRecords]);
 
   // ── Passive income chart data (by category, per month) ───────────────────
@@ -173,11 +188,20 @@ export default function TaxesPage() {
     return Array.from(map.entries()).map(([name, value]) => ({ name, value }));
   }, [fyRecords, viewUser]);
 
-  // ── Sorted ledger ─────────────────────────────────────────────────────────
+  // ── Sorted & Filtered ledger ─────────────────────────────────────────────
   const sortedLedger = useMemo(() => {
+    let filtered = [...fyRecords];
+    
+    if (tableUserFilter !== "All") {
+      filtered = filtered.filter(r => r.user === tableUserFilter);
+    }
+    if (tableTypeFilter !== "All") {
+      filtered = filtered.filter(r => r.incomeType === tableTypeFilter);
+    }
+
     const monthOrder = Object.fromEntries(FINANCIAL_YEAR_MONTHS.map((m, i) => [m, i]));
-    return [...fyRecords].sort((a, b) => (monthOrder[a.month] ?? 99) - (monthOrder[b.month] ?? 99));
-  }, [fyRecords]);
+    return filtered.sort((a, b) => (monthOrder[a.month] ?? 99) - (monthOrder[b.month] ?? 99));
+  }, [fyRecords, tableUserFilter, tableTypeFilter]);
 
   const handleDelete = async (id: string) => {
     setDeleting(id);
@@ -249,22 +273,22 @@ export default function TaxesPage() {
       <div className="grid gap-4 sm:grid-cols-3">
         <KpiCard
           icon={Wallet}
-          label="Salary Tax Paid"
-          value={`LKR ${fmt(salaryTax)}`}
+          label="Salary Tax (Paid)"
+          value={`LKR ${fmt(salaryTaxPaid)}`}
           sub={`${fyRecords.filter((r) => r.incomeType === "Salary").length} records`}
           color="#818cf8"
         />
         <KpiCard
           icon={PiggyBank}
-          label="Passive Income Tax"
-          value={`LKR ${fmt(passiveTax)}`}
+          label="Passive Tax (Pending)"
+          value={`LKR ${fmt(passiveTaxPending)}`}
           sub={`${fyRecords.filter((r) => r.incomeType === "Passive Income").length} records`}
-          color="#34d399"
+          color="#f59e0b"
         />
         <KpiCard
           icon={TrendingDown}
-          label="Total Tax Paid"
-          value={`LKR ${fmt(grandTotal)}`}
+          label="Total Tax Liability"
+          value={`LKR ${fmt(totalLiability)}`}
           sub={`FY ${selectedYear}`}
           color="#f472b6"
         />
@@ -291,8 +315,12 @@ export default function TaxesPage() {
                   <YAxis stroke="#888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={fmtK} width={48} />
                   <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(255,255,255,0.04)" }} />
                   <Legend wrapperStyle={{ fontSize: 13 }} />
-                  <Bar dataKey="Janitha" fill={USER_COLORS["Janitha"]} radius={[4, 4, 0, 0]} maxBarSize={40} />
-                  <Bar dataKey="Vindya"  fill={USER_COLORS["Vindya"]}  radius={[4, 4, 0, 0]} maxBarSize={40} />
+                  {/* Janitha Stack */}
+                  <Bar name="Janitha (Salary)" dataKey="Janitha_Salary" stackId="Janitha" fill={USER_COLORS["Janitha"]} radius={[0, 0, 0, 0]} maxBarSize={40} />
+                  <Bar name="Janitha (Passive)" dataKey="Janitha_Passive" stackId="Janitha" fill="#f59e0b" radius={[4, 4, 0, 0]} maxBarSize={40} />
+                  
+                  {/* Vindya (Salary only) */}
+                  <Bar name="Vindya (Salary)" dataKey="Vindya_Salary" stackId="Vindya" fill={USER_COLORS["Vindya"]} radius={[4, 4, 0, 0]} maxBarSize={40} />
                 </BarChart>
               </ResponsiveContainer>
             )}
@@ -376,14 +404,41 @@ export default function TaxesPage() {
       {/* ── Ledger Table ────────────────────────────────────────────────── */}
       <Card className="border-white/10">
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
               <CardTitle className="text-base font-semibold">Tax Ledger</CardTitle>
-              <CardDescription>All records for FY {selectedYear}</CardDescription>
+              <CardDescription>Records for FY {selectedYear}</CardDescription>
             </div>
-            <Badge variant="secondary" className="text-xs">
-              {fyRecords.length} {fyRecords.length === 1 ? "record" : "records"}
-            </Badge>
+            
+            <div className="flex flex-wrap items-center gap-2">
+              <Select value={tableUserFilter} onValueChange={(v) => v && setTableUserFilter(v)}>
+                <SelectTrigger className="w-[120px] h-8 text-xs bg-background/50">
+                  <SelectValue placeholder="All Users" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="All">All Users</SelectItem>
+                  <SelectItem value="Janitha">Janitha</SelectItem>
+                  <SelectItem value="Vindya">Vindya</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select value={tableTypeFilter} onValueChange={(v) => v && setTableTypeFilter(v)}>
+                <SelectTrigger className="w-[140px] h-8 text-xs bg-background/50">
+                  <SelectValue placeholder="All Types" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="All">All Types</SelectItem>
+                  <SelectItem value="Salary">Salary</SelectItem>
+                  <SelectItem value="Passive Income">Passive Income</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <div className="h-4 w-[1px] bg-white/10 mx-1 hidden sm:block" />
+
+              <Badge variant="secondary" className="text-xs">
+                {sortedLedger.length} {sortedLedger.length === 1 ? "record" : "records"}
+              </Badge>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
@@ -402,9 +457,10 @@ export default function TaxesPage() {
                     <TableHead>User</TableHead>
                     <TableHead>Income Type</TableHead>
                     <TableHead>Category</TableHead>
+                    <TableHead>Status</TableHead>
                     <TableHead className="text-right">Total Income</TableHead>
-                    <TableHead className="text-right">Tax Paid</TableHead>
-                    <TableHead className="text-right">Effective Rate</TableHead>
+                    <TableHead className="text-right font-bold">Tax Amount</TableHead>
+                    <TableHead className="text-right">Rate</TableHead>
                     <TableHead className="w-10" />
                   </TableRow>
                 </TableHeader>
@@ -446,13 +502,20 @@ export default function TaxesPage() {
                             </span>
                           ) : "—"}
                         </TableCell>
-                        <TableCell className="text-right font-mono text-sm">
+                        <TableCell>
+                          {rec.incomeType === "Salary" ? (
+                             <Badge variant="success" className="text-[10px] uppercase">Paid</Badge>
+                          ) : (
+                            <Badge variant="secondary" className="text-[10px] uppercase bg-amber-500/10 text-amber-500 border-amber-500/20">Pending</Badge>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right font-mono text-sm text-muted-foreground">
                           {fmt(rec.totalIncome)}
                         </TableCell>
-                        <TableCell className="text-right font-mono text-sm font-semibold text-rose-400">
+                        <TableCell className={`text-right font-mono text-sm font-bold ${rec.incomeType === 'Salary' ? 'text-indigo-400' : 'text-amber-400'}`}>
                           {fmt(rec.taxPaid)}
                         </TableCell>
-                        <TableCell className="text-right text-sm text-muted-foreground">
+                        <TableCell className="text-right text-xs text-muted-foreground tabular-nums">
                           {rate !== "—" ? `${rate}%` : "—"}
                         </TableCell>
                         <TableCell>
