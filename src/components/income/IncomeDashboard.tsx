@@ -335,6 +335,7 @@ export function IncomeDashboard() {
                       outerRadius={80}
                       paddingAngle={5}
                       dataKey="value"
+                      label={({ name, percent }) => `${name} ${((percent || 0) * 100).toFixed(0)}%`}
                     >
                       <Cell key="salary" fill={TYPE_COLORS["Salary"]} />
                       <Cell key="passive" fill={TYPE_COLORS["Passive Income"]} />
@@ -366,6 +367,7 @@ export function IncomeDashboard() {
                       outerRadius={80}
                       paddingAngle={5}
                       dataKey="value"
+                      label={({ name, percent }) => `${name} ${((percent || 0) * 100).toFixed(0)}%`}
                     >
                       {Object.entries(monthlySummary.passiveBreakdown).map(([name], index) => (
                         <Cell key={`cell-${index}`} fill={PASSIVE_COLORS[name] || "#8884d8"} />
@@ -383,6 +385,79 @@ export function IncomeDashboard() {
           </>
         ) : (
           <>
+            {/* FY Summary Pies */}
+            <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
+              {filterUser === "Household" && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>FY Household Split</CardTitle>
+                    <CardDescription>Janitha vs Vindya (Total Yearly Income)</CardDescription>
+                  </CardHeader>
+                  <CardContent className="h-[300px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={[
+                            { name: "Janitha", value: fyChartData.reduce((s, m) => s + (m.Janitha || 0), 0) },
+                            { name: "Vindya", value: fyChartData.reduce((s, m) => s + (m.Vindya || 0), 0) },
+                          ]}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={60}
+                          outerRadius={80}
+                          paddingAngle={5}
+                          dataKey="value"
+                          label={({ name, percent }) => `${name} ${((percent || 0) * 100).toFixed(0)}%`}
+                        >
+                          <Cell key="janitha" fill="#6366f1" />
+                          <Cell key="vindya" fill="#ec4899" />
+                        </Pie>
+                        <Tooltip 
+                          contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', borderRadius: '12px' }}
+                          formatter={(val: any) => val?.toLocaleString()}
+                        />
+                        <Legend />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+              )}
+
+              <Card className={filterUser !== "Household" ? "md:col-span-2" : ""}>
+                <CardHeader>
+                  <CardTitle>FY Income Source Split</CardTitle>
+                  <CardDescription>Salary vs Passive Income (Total Yearly)</CardDescription>
+                </CardHeader>
+                <CardContent className="h-[300px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={[
+                          { name: "Salary", value: fySummary.salary },
+                          { name: "Passive Income", value: fySummary.passive },
+                        ]}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={60}
+                        outerRadius={80}
+                        paddingAngle={5}
+                        dataKey="value"
+                        label={({ name, percent }) => `${name} ${((percent || 0) * 100).toFixed(0)}%`}
+                      >
+                        <Cell key="salary" fill={TYPE_COLORS["Salary"]} />
+                        <Cell key="passive" fill={TYPE_COLORS["Passive Income"]} />
+                      </Pie>
+                      <Tooltip 
+                        contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', borderRadius: '12px' }}
+                        formatter={(val: any) => val?.toLocaleString()}
+                      />
+                      <Legend />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+            </div>
+
             {/* Total Monthly Income Trend (FY Mode) */}
             <Card className="md:col-span-2">
               <CardHeader>
@@ -425,7 +500,7 @@ export function IncomeDashboard() {
                   <BarChart data={fyChartData}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-white/5" />
                     <XAxis dataKey="month" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
-                    <YAxis hide />
+                    <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(val) => `${(val/1000).toFixed(0)}k`} />
                     <Tooltip 
                       cursor={{ fill: 'rgba(255,255,255,0.05)' }}
                       contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', borderRadius: '12px' }}
