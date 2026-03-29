@@ -6,6 +6,8 @@ import { AddLoanForm } from "@/components/loans/AddLoanForm";
 import { VehicleLoanCard } from "@/components/loans/VehicleLoanCard";
 import { OverdraftLoanCard } from "@/components/loans/OverdraftLoanCard";
 import { LoanDashboard } from "@/components/loans/LoanDashboard";
+import { LoanChart } from "@/components/loans/LoanChart";
+import { LoanMonthlyPaymentChart } from "@/components/loans/LoanMonthlyPaymentChart";
 import { Car, CreditCard, Loader2, Eye, EyeOff } from "lucide-react";
 
 export function LoansPageClient() {
@@ -74,8 +76,14 @@ export function LoansPageClient() {
       {/* Add form */}
       <AddLoanForm />
 
-      {/* Dashboard summary — passes showSettled so it filters correctly */}
+      {/* Dashboard summary — only shown when there are loans */}
       {hasAnyLoan && <LoanDashboard showSettled={showSettled} />}
+
+      {/* Monthly chart */}
+      {hasAnyLoan && <LoanChart />}
+
+      {/* Monthly payment breakdown */}
+      {hasAnyLoan && <LoanMonthlyPaymentChart />}
 
       {/* Vehicle Loans */}
       {visibleVehicleLoans.length > 0 && (
