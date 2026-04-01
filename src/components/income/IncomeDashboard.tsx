@@ -169,7 +169,13 @@ export function IncomeDashboard() {
     const total = filteredRecords.reduce((s, r) => s + r.amount, 0);
     const salary = filteredRecords.filter(r => r.type === "Salary").reduce((s, r) => s + r.amount, 0);
     const passive = filteredRecords.filter(r => r.type === "Passive Income").reduce((s, r) => s + r.amount, 0);
-    return { total, salary, passive };
+    const passiveBreakdown = filteredRecords
+      .filter(r => r.type === "Passive Income")
+      .reduce((acc, r) => {
+        if (r.category) acc[r.category] = (acc[r.category] || 0) + r.amount;
+        return acc;
+      }, {} as Record<string, number>);
+    return { total, salary, passive, passiveBreakdown };
   }, [filteredRecords]);
 
   return (
@@ -489,31 +495,67 @@ export function IncomeDashboard() {
               </CardContent>
             </Card>
 
-            {/* Passive Trend (Optional FY Card) */}
-            <Card className="md:col-span-2">
-              <CardHeader>
-                <CardTitle>FY Passive Income Split</CardTitle>
-                <CardDescription>Passive breakdown trends over the year</CardDescription>
-              </CardHeader>
-              <CardContent className="h-[400px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={fyChartData}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-white/5" />
-                    <XAxis dataKey="month" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
-                    <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(val) => `${(val/1000).toFixed(0)}k`} />
-                    <Tooltip 
-                      cursor={{ fill: 'rgba(255,255,255,0.05)' }}
-                      contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', borderRadius: '12px' }}
-                      formatter={(val: any) => val?.toLocaleString()}
-                    />
-                    <Legend iconType="circle" />
-                    {Object.keys(PASSIVE_COLORS).map((cat) => (
-                      <Bar key={cat} dataKey={cat} stackId="passive" fill={PASSIVE_COLORS[cat]} />
-                    ))}
-                  </BarChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
+            {/* Passive Income row */}
+            <div className="md:col-span-2 grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Passive Trend (Optional FY Card) */}
+              <Card className="lg:col-span-2">
+                <CardHeader>
+                  <CardTitle>FY Passive Income Trend</CardTitle>
+                  <CardDescription>Passive breakdown trends over the year</CardDescription>
+                </CardHeader>
+                <CardContent className="h-[400px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={fyChartData}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-white/5" />
+                      <XAxis dataKey="month" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
+                      <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(val) => `${(val/1000).toFixed(0)}k`} />
+                      <Tooltip 
+                        cursor={{ fill: 'rgba(255,255,255,0.05)' }}
+                        contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', borderRadius: '12px' }}
+                        formatter={(val: any) => val?.toLocaleString()}
+                      />
+                      <Legend iconType="circle" />
+                      {Object.keys(PASSIVE_COLORS).map((cat) => (
+                        <Bar key={cat} dataKey={cat} stackId="passive" fill={PASSIVE_COLORS[cat]} />
+                      ))}
+                    </BarChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+
+              {/* FY Passive Breakdown */}
+              <Card className="lg:col-span-1">
+                <CardHeader>
+                  <CardTitle>FY Passive Breakdown</CardTitle>
+                  <CardDescription>Total distribution of investment earnings</CardDescription>
+                </CardHeader>
+                <CardContent className="h-[400px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={Object.entries(fySummary.passiveBreakdown).map(([name, value]) => ({ name, value }))}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={60}
+                        outerRadius={80}
+                        paddingAngle={5}
+                        dataKey="value"
+                        label={({ name, percent }) => `${name} ${((percent || 0) * 100).toFixed(0)}%`}
+                      >
+                        {Object.entries(fySummary.passiveBreakdown).map(([name], index) => (
+                          <Cell key={`cell-${index}`} fill={PASSIVE_COLORS[name] || "#8884d8"} />
+                        ))}
+                      </Pie>
+                      <Tooltip 
+                        contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', borderRadius: '12px' }}
+                        formatter={(val: any) => val?.toLocaleString()}
+                      />
+                      <Legend />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+            </div>
           </>
         )}
       </div>

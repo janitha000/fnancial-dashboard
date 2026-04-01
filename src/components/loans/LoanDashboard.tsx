@@ -97,7 +97,7 @@ function MetricCard({ label, value, sub, accent = "text-foreground" }: MetricCar
 
 export function LoanDashboard({ showSettled }: { showSettled: boolean }) {
   const { vehicleLoans, overdraftLoans } = useLoan();
-  const [tab, setTab] = useState<"yearly" | "lifetime">("yearly");
+  const [tab, setTab] = useState<"yearly" | "lifetime">("lifetime");
 
   const allFYs = getAllFYs(vehicleLoans, overdraftLoans);
   const [selectedFY, setSelectedFY] = useState(allFYs[0] ?? getFY(new Date()));
@@ -159,7 +159,7 @@ export function LoanDashboard({ showSettled }: { showSettled: boolean }) {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
+      <div className="grid grid-cols-2 xl:grid-cols-5 gap-4 mb-5">
         <MetricCard
           label="Full Loan Amount"
           value={fmt(summary.totalLoanAmount)}
@@ -180,6 +180,11 @@ export function LoanDashboard({ showSettled }: { showSettled: boolean }) {
           label="Settled Amount"
           value={fmt(summary.settledAmount)}
           accent="text-green-400"
+        />
+        <MetricCard
+          label="Remaining Outstanding"
+          value={fmt(totalRemaining)}
+          accent="text-orange-400" // matched to the orange text in breakdown
         />
       </div>
 

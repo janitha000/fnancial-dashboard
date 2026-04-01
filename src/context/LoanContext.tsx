@@ -66,25 +66,26 @@ export function getVehicleLoanMetrics(loan: VehicleLoan, asOf: Date = new Date()
   const start = new Date(loan.dateOfLoan);
 
   // months elapsed since loan start (clamped to duration)
-  const msPerMonth = 1000 * 60 * 60 * 24 * 30.4375;
-  const rawMonths = Math.floor((asOf.getTime() - start.getTime()) / msPerMonth);
+  const rawMonths = (asOf.getFullYear() - start.getFullYear()) * 12 + (asOf.getMonth() - start.getMonth());
   const monthsElapsed = Math.max(0, Math.min(rawMonths, loan.duration));
 
   const totalPayable = loan.monthlyPayment * loan.duration;
+  
+  const getSettledMonths = () => {
+    if (!loan.settled) return 0;
+    const sDate = new Date(loan.settled.settleDate);
+    return (sDate.getFullYear() - start.getFullYear()) * 12 + (sDate.getMonth() - start.getMonth());
+  };
+
   const alreadyPaid = loan.settled
-    ? loan.monthlyPayment * Math.floor(
-        (new Date(loan.settled.settleDate).getTime() - start.getTime()) / msPerMonth
-      )
+    ? loan.monthlyPayment * Math.max(0, Math.min(getSettledMonths(), loan.duration))
     : loan.monthlyPayment * monthsElapsed;
 
   // Amortization-based remaining capital
   const monthlyRate = loan.interestRate / 100 / 12;
   let balance = loan.amount;
   const iterations = loan.settled
-    ? Math.max(0, Math.min(
-        Math.floor((new Date(loan.settled.settleDate).getTime() - start.getTime()) / msPerMonth),
-        loan.duration
-      ))
+    ? Math.max(0, Math.min(getSettledMonths(), loan.duration))
     : monthsElapsed;
 
   let totalInterestPaid = 0;
