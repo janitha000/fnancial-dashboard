@@ -5,13 +5,14 @@ import { useLoan, getVehicleLoanMetrics } from "@/context/LoanContext";
 import { AddLoanForm } from "@/components/loans/AddLoanForm";
 import { VehicleLoanCard } from "@/components/loans/VehicleLoanCard";
 import { OverdraftLoanCard } from "@/components/loans/OverdraftLoanCard";
+import { CreditCardLoanCard } from "@/components/loans/CreditCardLoanCard";
 import { LoanDashboard } from "@/components/loans/LoanDashboard";
 import { LoanChart } from "@/components/loans/LoanChart";
 import { LoanMonthlyPaymentChart } from "@/components/loans/LoanMonthlyPaymentChart";
 import { Car, CreditCard, Loader2, Eye, EyeOff } from "lucide-react";
 
 export function LoansPageClient() {
-  const { vehicleLoans, overdraftLoans, isLoaded } = useLoan();
+  const { vehicleLoans, overdraftLoans, creditCardLoans, isLoaded } = useLoan();
   const [showSettled, setShowSettled] = useState(false);
 
   if (!isLoaded) {
@@ -27,8 +28,12 @@ export function LoansPageClient() {
   const activeVehicleLoans = vehicleLoans.filter((l) => !getVehicleLoanMetrics(l).isSettled);
   const visibleVehicleLoans = showSettled ? vehicleLoans : activeVehicleLoans;
 
-  const hasAnyLoan = vehicleLoans.length > 0 || overdraftLoans.length > 0;
-  const hasSettledLoans = settledVehicleLoans.length > 0;
+  const settledCCLoans = creditCardLoans.filter((l) => getVehicleLoanMetrics(l as any).isSettled);
+  const activeCCLoans = creditCardLoans.filter((l) => !getVehicleLoanMetrics(l as any).isSettled);
+  const visibleCCLoans = showSettled ? creditCardLoans : activeCCLoans;
+
+  const hasAnyLoan = vehicleLoans.length > 0 || overdraftLoans.length > 0 || creditCardLoans.length > 0;
+  const hasSettledLoans = settledVehicleLoans.length > 0 || settledCCLoans.length > 0;
 
   return (
     <div className="space-y-8">

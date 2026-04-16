@@ -55,9 +55,21 @@ export type OverdraftLoan = {
   interestAccruals: InterestAccrual[];
 };
 
+export type CreditCardLoan = {
+  id: string;
+  name: string;
+  amount: number;         // principal/full amount
+  interestRate: number;   // % per annum
+  duration: number;       // in months
+  monthlyPayment: number;
+  dateOfLoan: string;     // ISO date string (YYYY-MM-DD)
+  settled?: VehicleLoanSettlement;
+};
+
 export type LoanData = {
   vehicleLoans: VehicleLoan[];
   overdraftLoans: OverdraftLoan[];
+  creditCardLoans?: CreditCardLoan[];
 };
 
 // ─── Computed helpers ──────────────────────────────────────────────────────────
@@ -181,6 +193,11 @@ interface LoanContextType {
   addOverdraftInterest: (loanId: string, accrual: Omit<InterestAccrual, "id">) => Promise<void>;
   deleteOverdraftInterest: (loanId: string, accrualId: string) => Promise<void>;
   deleteOverdraftLoan: (id: string) => Promise<void>;
+  // Credit Card Installments
+  creditCardLoans: CreditCardLoan[];
+  addCreditCardLoan: (loan: Omit<CreditCardLoan, "id">) => Promise<void>;
+  settleCreditCardLoan: (id: string, settlement: VehicleLoanSettlement) => Promise<void>;
+  deleteCreditCardLoan: (id: string) => Promise<void>;
 }
 
 const LoanContext = createContext<LoanContextType | undefined>(undefined);
@@ -188,6 +205,7 @@ const LoanContext = createContext<LoanContextType | undefined>(undefined);
 export function LoanProvider({ children }: { children: ReactNode }) {
   const [vehicleLoans, setVehicleLoans] = useState<VehicleLoan[]>([]);
   const [overdraftLoans, setOverdraftLoans] = useState<OverdraftLoan[]>([]);
+  const [creditCardLoans, setCreditCardLoans] = useState<CreditCardLoan[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
@@ -204,6 +222,7 @@ export function LoanProvider({ children }: { children: ReactNode }) {
         }));
         setVehicleLoans(data.vehicleLoans || []);
         setOverdraftLoans(migratedOD);
+        setCreditCardLoans(data.creditCardLoans || []);
       } catch (e) {
         console.error("Failed to load loan data", e);
       } finally {
@@ -213,15 +232,15 @@ export function LoanProvider({ children }: { children: ReactNode }) {
     load();
   }, []);
 
-  const persist = async (vl: VehicleLoan[], ol: OverdraftLoan[]) => {
-    await saveLoanData({ vehicleLoans: vl, overdraftLoans: ol });
+  const persist = async (vl: VehicleLoan[], ol: OverdraftLoan[], cl: CreditCardLoan[]) => {
+    await saveLoanData({ vehicleLoans: vl, overdraftLoans: ol, creditCardLoans: cl });
   };
 
   const addVehicleLoan = async (loan: Omit<VehicleLoan, "id">) => {
     const newLoan: VehicleLoan = { ...loan, id: crypto.randomUUID() };
     const updated = [...vehicleLoans, newLoan];
     setVehicleLoans(updated);
-    await persist(updated, overdraftLoans);
+    await persist(updated, overdraftLoans, creditCardLoans);
   };
 
   const settleVehicleLoan = async (id: string, settlement: VehicleLoanSettlement) => {
@@ -229,20 +248,20 @@ export function LoanProvider({ children }: { children: ReactNode }) {
       l.id === id ? { ...l, settled: settlement } : l
     );
     setVehicleLoans(updated);
-    await persist(updated, overdraftLoans);
+    await persist(updated, overdraftLoans, creditCardLoans);
   };
 
   const deleteVehicleLoan = async (id: string) => {
     const updated = vehicleLoans.filter((l) => l.id !== id);
     setVehicleLoans(updated);
-    await persist(updated, overdraftLoans);
+    await persist(updated, overdraftLoans, creditCardLoans);
   };
 
   const addOverdraftLoan = async (loan: Omit<OverdraftLoan, "id" | "drawdowns" | "settlements" | "interestAccruals">) => {
     const newLoan: OverdraftLoan = { ...loan, id: crypto.randomUUID(), drawdowns: [], settlements: [], interestAccruals: [] };
     const updated = [...overdraftLoans, newLoan];
     setOverdraftLoans(updated);
-    await persist(vehicleLoans, updated);
+    await persist(vehicleLoans, updated, creditCardLoans);
   };
 
   const addOverdraftDrawdown = async (
@@ -255,7 +274,7 @@ export function LoanProvider({ children }: { children: ReactNode }) {
         : l
     );
     setOverdraftLoans(updated);
-    await persist(vehicleLoans, updated);
+    await persist(vehicleLoans, updated, creditCardLoans);
   };
 
   const deleteOverdraftDrawdown = async (loanId: string, drawdownId: string) => {
@@ -265,7 +284,7 @@ export function LoanProvider({ children }: { children: ReactNode }) {
         : l
     );
     setOverdraftLoans(updated);
-    await persist(vehicleLoans, updated);
+    await persist(vehicleLoans, updated, creditCardLoans);
   };
 
   const addOverdraftSettlement = async (
@@ -278,7 +297,7 @@ export function LoanProvider({ children }: { children: ReactNode }) {
         : l
     );
     setOverdraftLoans(updated);
-    await persist(vehicleLoans, updated);
+    await persist(vehicleLoans, updated, creditCardLoans);
   };
 
   const deleteOverdraftSettlement = async (loanId: string, settlementId: string) => {
@@ -288,7 +307,7 @@ export function LoanProvider({ children }: { children: ReactNode }) {
         : l
     );
     setOverdraftLoans(updated);
-    await persist(vehicleLoans, updated);
+    await persist(vehicleLoans, updated, creditCardLoans);
   };
 
   const addOverdraftInterest = async (
@@ -301,7 +320,7 @@ export function LoanProvider({ children }: { children: ReactNode }) {
         : l
     );
     setOverdraftLoans(updated);
-    await persist(vehicleLoans, updated);
+    await persist(vehicleLoans, updated, creditCardLoans);
   };
 
   const deleteOverdraftInterest = async (loanId: string, accrualId: string) => {
@@ -311,13 +330,34 @@ export function LoanProvider({ children }: { children: ReactNode }) {
         : l
     );
     setOverdraftLoans(updated);
-    await persist(vehicleLoans, updated);
+    await persist(vehicleLoans, updated, creditCardLoans);
   };
 
   const deleteOverdraftLoan = async (id: string) => {
     const updated = overdraftLoans.filter((l) => l.id !== id);
     setOverdraftLoans(updated);
-    await persist(vehicleLoans, updated);
+    await persist(vehicleLoans, updated, creditCardLoans);
+  };
+
+  const addCreditCardLoan = async (loan: Omit<CreditCardLoan, "id">) => {
+    const newLoan: CreditCardLoan = { ...loan, id: crypto.randomUUID() };
+    const updated = [...creditCardLoans, newLoan];
+    setCreditCardLoans(updated);
+    await persist(vehicleLoans, overdraftLoans, updated);
+  };
+
+  const settleCreditCardLoan = async (id: string, settlement: VehicleLoanSettlement) => {
+    const updated = creditCardLoans.map((l) =>
+      l.id === id ? { ...l, settled: settlement } : l
+    );
+    setCreditCardLoans(updated);
+    await persist(vehicleLoans, overdraftLoans, updated);
+  };
+
+  const deleteCreditCardLoan = async (id: string) => {
+    const updated = creditCardLoans.filter((l) => l.id !== id);
+    setCreditCardLoans(updated);
+    await persist(vehicleLoans, overdraftLoans, updated);
   };
 
   return (
@@ -337,6 +377,10 @@ export function LoanProvider({ children }: { children: ReactNode }) {
         addOverdraftInterest,
         deleteOverdraftInterest,
         deleteOverdraftLoan,
+        creditCardLoans,
+        addCreditCardLoan,
+        settleCreditCardLoan,
+        deleteCreditCardLoan,
       }}
     >
       {children}

@@ -35,7 +35,7 @@ export function ExpenseProvider({ children }: { children: ReactNode }) {
   const [manualExpenses, setManualExpenses] = useState<ExpenseRecord[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
 
-  const { vehicleLoans, overdraftLoans } = useLoan();
+  const { vehicleLoans, overdraftLoans, creditCardLoans } = useLoan();
   const { taxRecords } = useTax();
 
   const HOUSEHOLD_AUTO_AMOUNT = 500000;
@@ -133,6 +133,40 @@ export function ExpenseProvider({ children }: { children: ReactNode }) {
             category: "Loan",
             amount: loan.monthlyPayment,
             description: `Auto EMI: ${loan.name}`,
+            isAutomatic: true,
+         });
+      }
+    });
+
+    // 3c. Automatic Loans (Credit Card Installments)
+    creditCardLoans.forEach((loan) => {
+      const targetDate = getFirstDayOfMonth(fy, month);
+      const startDate = new Date(loan.dateOfLoan);
+      
+      if (loan.settled) {
+        const settleDate = new Date(loan.settled.settleDate);
+        if (isDateBeforeMonth(settleDate, fy, month)) return;
+        if (isDateInMonth(settleDate, fy, month)) {
+          combined.push({
+            id: `auto-cc-settle-${loan.id}-${fy}-${month}`,
+            category: "Loan",
+            amount: loan.settled.settleAmount,
+            description: `CC Settle: ${loan.name}`,
+            isAutomatic: true,
+          });
+          return;
+        }
+      }
+
+      const diffTime = targetDate.getTime() - startDate.getTime();
+      const diffMonths = Math.floor(diffTime / (1000 * 60 * 60 * 24 * 30.4375));
+      
+      if (diffMonths >= 0 && diffMonths < loan.duration) {
+         combined.push({
+            id: `auto-cc-${loan.id}-${fy}-${month}`,
+            category: "Loan",
+            amount: loan.monthlyPayment,
+            description: `Auto CC: ${loan.name}`,
             isAutomatic: true,
          });
       }

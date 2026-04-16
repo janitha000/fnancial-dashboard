@@ -8,10 +8,10 @@ const DB_KEY = "financial_dashboard_loans_v1";
 export async function getLoanData(): Promise<LoanData> {
   try {
     const data = await kv.get<LoanData>(DB_KEY);
-    return data || { vehicleLoans: [], overdraftLoans: [] };
+    return data || { vehicleLoans: [], overdraftLoans: [], creditCardLoans: [] };
   } catch (error) {
     console.error("Failed to fetch loan data from KV", error);
-    return { vehicleLoans: [], overdraftLoans: [] };
+    return { vehicleLoans: [], overdraftLoans: [], creditCardLoans: [] };
   }
 }
 
