@@ -147,6 +147,43 @@ export function LoansPageClient() {
         </section>
       )}
 
+      {/* Credit Card Loans */}
+      {visibleCCLoans.length > 0 && (
+        <section>
+          <div className="flex items-center gap-2.5 mb-4">
+            <div className="p-1.5 rounded-lg bg-purple-500/15">
+              <CreditCard className="h-4 w-4 text-purple-400" />
+            </div>
+            <h2 className="text-base font-semibold text-foreground">Credit Card Installments</h2>
+            <span className="px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-400 text-xs font-medium">
+              {visibleCCLoans.length}
+              {!showSettled && settledCCLoans.length > 0 && (
+                <span className="text-muted-foreground font-normal">
+                  {" "}/ {creditCardLoans.length}
+                </span>
+              )}
+            </span>
+          </div>
+          <div className="grid gap-4">
+            {visibleCCLoans.map((loan) => (
+              <CreditCardLoanCard key={loan.id} loan={loan} />
+            ))}
+          </div>
+
+          {/* Faded "settled loans hidden" indicator */}
+          {!showSettled && settledCCLoans.length > 0 && (
+            <button
+              onClick={() => setShowSettled(true)}
+              className="mt-3 w-full py-2.5 rounded-xl border border-dashed border-white/10 text-xs text-muted-foreground hover:text-foreground hover:border-white/20 transition flex items-center justify-center gap-2"
+            >
+              <EyeOff className="h-3.5 w-3.5" />
+              {settledCCLoans.length} settled installment
+              {settledCCLoans.length > 1 ? "s" : ""} hidden — click to show
+            </button>
+          )}
+        </section>
+      )}
+
       {/* Empty state */}
       {!hasAnyLoan && (
         <div className="flex flex-col items-center justify-center min-h-[30vh] text-center">

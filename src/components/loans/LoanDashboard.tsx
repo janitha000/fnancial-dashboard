@@ -117,10 +117,6 @@ export function LoanDashboard({ showSettled }: { showSettled: boolean }) {
 
   const summary = tab === "yearly" ? yearlySummary : lifetimeSummary;
 
-  const ccLifetimeSummary = computeSummary([], [], creditCardLoans, () => true, showSettled);
-  const ccYearlySummary = computeSummary([], [], creditCardLoans, (d) => inFY(d, selectedFY), showSettled);
-  const ccSummary = tab === "yearly" ? ccYearlySummary : ccLifetimeSummary;
-
   const settledNote = !showSettled ? (
     <span className="text-xs text-muted-foreground/60 font-normal"> (excl. settled)</span>
   ) : null;
@@ -217,60 +213,6 @@ export function LoanDashboard({ showSettled }: { showSettled: boolean }) {
               style={{ width: `${summary.paymentPercent}%` }}
             />
           </div>
-        </div>
-      )}
-
-      {/* Credit Card Specific Summary */}
-      {creditCardLoans.length > 0 && (
-        <div className="mt-6 pt-6 border-t border-white/10">
-          <div className="flex items-center gap-2 mb-4">
-            <CreditCard className="h-5 w-5 text-purple-400" />
-            <h3 className="text-md font-semibold text-foreground">
-              Credit Card Installments Summary
-            </h3>
-          </div>
-          <div className="grid grid-cols-2 xl:grid-cols-5 gap-4 mb-5">
-            <MetricCard
-              label="Total CC Amount"
-              value={fmt(ccSummary.totalLoanAmount)}
-              accent="text-foreground"
-            />
-            <MetricCard
-              label="Already Paid"
-              value={fmt(ccSummary.alreadyPaid)}
-              sub={`${ccSummary.paymentPercent.toFixed(1)}% of total`}
-              accent="text-purple-400"
-            />
-            <MetricCard
-              label="Interest Paid"
-              value={fmt(ccSummary.interestPaid)}
-              accent="text-yellow-400"
-            />
-            <MetricCard
-              label="Settled Amount"
-              value={fmt(ccSummary.settledAmount)}
-              accent="text-green-400"
-            />
-            <MetricCard
-              label="Remaining CC"
-              value={fmt(ongoingCC.reduce((s, l) => s + getVehicleLoanMetrics(l as any).remainingCapital, 0))}
-              accent="text-purple-400"
-            />
-          </div>
-          {ccSummary.totalLoanAmount > 0 && (
-            <div className="mb-4">
-              <div className="flex justify-between text-xs text-muted-foreground mb-1.5">
-                <span>CC repayment progress</span>
-                <span>{ccSummary.paymentPercent.toFixed(1)}%</span>
-              </div>
-              <div className="h-2.5 rounded-full bg-white/10 overflow-hidden">
-                <div
-                  className="h-full rounded-full bg-gradient-to-r from-purple-500 to-fuchsia-400 transition-all duration-700"
-                  style={{ width: `${ccSummary.paymentPercent}%` }}
-                />
-              </div>
-            </div>
-          )}
         </div>
       )}
 
