@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useWealth, WealthRecord, WealthMonth, sortWealthMonths } from "@/context/WealthContext";
 import { PieChart, Pie, Cell, LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
-import { Upload, Trash2, TrendingUp, TrendingDown, PieChart as PieIcon, Table as TableIcon, ChevronLeft, ChevronRight, LineChart as LineChartIcon, Sparkles } from "lucide-react";
+import { Trash2, TrendingUp, TrendingDown, PieChart as PieIcon, Table as TableIcon, ChevronLeft, ChevronRight, LineChart as LineChartIcon, Sparkles } from "lucide-react";
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16', '#ef4444', '#14b8a6', '#6366f1'];
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -34,39 +34,7 @@ const renderGainLossDot = (props: any) => {
   );
 };
 
-const generateSriLankanAIInsight = (records: WealthRecord[], total: number, variance: number, timeframe: string) => {
-  if (total === 0) return "Provide your pipeline with robust data to generate macroeconomic insights.";
-  
-  let fixedIncome = 0; let equity = 0; let cash = 0;
-  
-  records.forEach(r => {
-    const lower = r.category.toLowerCase();
-    if (lower.includes('fd') || lower.includes('treasury') || lower.includes('bill') || lower.includes('bond') || lower.includes('fixed')) fixedIncome += r.amount;
-    else if (lower.includes('stock') || lower.includes('equity') || lower.includes('index') || lower.includes('fund') || lower.includes('unit')) equity += r.amount;
-    else if (lower.includes('cash') || lower.includes('bank') || lower.includes('savings')) cash += r.amount;
-  });
 
-  const fiPercent = (fixedIncome / total) * 100;
-  const eqPercent = (equity / total) * 100;
-  
-  let insight = "";
-  
-  if (variance > 0) {
-    insight += `Your wealth experienced strong growth of +${variance.toLocaleString()} LKR this ${timeframe}. `;
-  } else if (variance < 0) {
-    insight += `Your portfolio contracted by ${Math.abs(variance).toLocaleString()} LKR this ${timeframe}. `;
-  }
-
-  if (fiPercent > 40) {
-    insight += `You are heavily weighted defensively (${fiPercent.toFixed(0)}% Fixed Income). Given current CBSL monetary easing and T-Bill yields compressing towards single digits, consider locking in long-term FD rates immediately or shifting capital efficiently into the Colombo Stock Exchange (CSE) to chase higher equity yields. `;
-  } else if (eqPercent > 40) {
-    insight += `Your portfolio is exposed heavily to equities (${eqPercent.toFixed(0)}%). Keep a watchful eye on CSE ASPI movements and ensure your unit trusts (CAL/NDB) are hedging against potential local currency (LKR) parity fluctuations. `;
-  } else {
-    insight += `You have a highly diversified hybrid portfolio. It is well-positioned to ride out local inflation rates in Colombo while steadily accumulating compounded interest through multiple resilient channels. `;
-  }
-  
-  return insight;
-};
 
 export default function WealthPage() {
   const { wealthMonths, addMonthData, deleteMonthData, isLoaded } = useWealth();
@@ -75,7 +43,8 @@ export default function WealthPage() {
   const [uploadYear, setUploadYear] = useState<string>("2025/2026");
   const [uploadMonth, setUploadMonth] = useState<string>("Apr");
   const [uploadError, setUploadError] = useState<string | null>(null);
-  const [csvText, setCsvText] = useState<string>("");
+  const [manualType, setManualType] = useState<string>("NDB");
+  const [manualAmount, setManualAmount] = useState<string>("");
 
   const [activeTab, setActiveTab] = useState<string>("month");
   
@@ -92,54 +61,51 @@ export default function WealthPage() {
     }
   }, [latestMonthRecord, viewMonthId]);
 
-  const parseCsvText = (text: string) => {
-    try {
-      const lines = text.split('\n').filter(line => line.trim() !== "");
-      const records: WealthRecord[] = [];
-      lines.forEach(line => {
-        const cols = line.split('|').map(c => c.trim());
-        if (cols.length >= 3) {
-          const category = cols[0];
-          const subCategory = cols[1];
-          const amountStr = cols[2].replace(/,/g, '');
-          const amount = parseFloat(amountStr);
-          if (category && !isNaN(amount)) records.push({ category, subCategory, amount });
-        }
-      });
-      if (records.length === 0) {
-        setUploadError("No valid records found. Ensure CSV is pipe (|) delimited.");
-        return;
-      }
-      addMonthData(uploadYear, uploadMonth, records);
-      setUploadError(null);
-      setViewMonthId(`${uploadYear}-${uploadMonth}`);
-      setViewYear(uploadYear);
-      setCsvText("");
-      setShowUploader(false);
-    } catch (err) {
-      setUploadError("Failed to parse the data.");
-    }
-  };
-
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const text = event.target?.result as string;
-      parseCsvText(text);
-      e.target.value = "";
-    };
-    reader.readAsText(file);
-  };
-
-  const handleTextUpload = () => {
-    if (!csvText.trim()) {
-      setUploadError("Please paste your CSV data first.");
+  const handleManualAdd = async () => {
+    if (!manualAmount || isNaN(parseFloat(manualAmount))) {
+      setUploadError("Please enter a valid amount.");
       return;
     }
-    parseCsvText(csvText);
+
+    const amount = parseFloat(manualAmount);
+    const newRecord: WealthRecord = {
+      category: manualType,
+      subCategory: "",
+      amount: amount
+    };
+
+    // Find existing records for this month to append/update
+    const monthId = `${uploadYear}-${uploadMonth}`;
+    const existingMonth = wealthMonths.find(m => m.id === monthId);
+    
+    let updatedRecords: WealthRecord[] = [];
+    if (existingMonth) {
+      // Check if we should update or append. 
+      // If the same category exists, we might want to update it.
+      const existingIdx = existingMonth.records.findIndex(r => r.category === manualType);
+      if (existingIdx >= 0) {
+        updatedRecords = [...existingMonth.records];
+        updatedRecords[existingIdx] = newRecord;
+      } else {
+        updatedRecords = [...existingMonth.records, newRecord];
+      }
+    } else {
+      updatedRecords = [newRecord];
+    }
+
+    try {
+      await addMonthData(uploadYear, uploadMonth, updatedRecords);
+      setManualAmount("");
+      setUploadError(null);
+      setViewMonthId(monthId);
+      setViewYear(uploadYear);
+      // Optional: keep uploader open or close it?
+      // setShowUploader(false); 
+    } catch (err) {
+      setUploadError("Failed to save wealth data.");
+    }
   };
+
 
   const getEffectiveRecords = (records: WealthRecord[]) => {
     const categoriesWithSub = new Set<string>();
@@ -264,6 +230,32 @@ export default function WealthPage() {
     }).sort((a,b) => b.amount - a.amount);
   }, [latestFyMonth, prevFyLatest]);
 
+  // --- FULL VIEW LOGIC ---
+  const fullTrendData = useMemo(() => sortedMonths.map(m => ({ month: `${m.month} ${m.year}`, "Total Assets": getMonthTotal(m) })), [sortedMonths]);
+  
+  const fullGainLossData = useMemo(() => sortedMonths.map(m => {
+    const glIdx = sortedMonths.findIndex(sm => sm.id === m.id);
+    const pTotal = glIdx > 0 ? getMonthTotal(sortedMonths[glIdx - 1]) : getMonthTotal(m);
+    return { month: `${m.month} ${m.year}`, "Gain/Loss": getMonthTotal(m) - pTotal };
+  }), [sortedMonths]);
+
+  const fullCategories = useMemo(() => {
+    const cats = new Set<string>();
+    sortedMonths.forEach(m => getEffectiveRecords(m.records).forEach(r => cats.add(r.category)));
+    return Array.from(cats);
+  }, [sortedMonths]);
+
+  const fullStackedAreaData = useMemo(() => {
+    return sortedMonths.map(m => {
+      const dataPoint: any = { month: `${m.month} ${m.year}` };
+      const effective = getEffectiveRecords(m.records);
+      const grouped: Record<string, number> = {};
+      effective.forEach(r => { grouped[r.category] = (grouped[r.category] || 0) + r.amount; });
+      fullCategories.forEach(cat => { dataPoint[cat] = grouped[cat] || 0; });
+      return dataPoint;
+    });
+  }, [sortedMonths, fullCategories]);
+
   if (!isLoaded) return <div className="flex h-[60vh] flex-col items-center justify-center space-y-4"><div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div></div>;
 
   return (
@@ -274,7 +266,7 @@ export default function WealthPage() {
           <p className="text-muted-foreground mt-1 text-lg">Manage and analyze your multi-category wealth growth over time.</p>
         </div>
         <Button onClick={() => setShowUploader(!showUploader)} size="lg" className="bg-primary text-primary-foreground font-bold shadow-lg shadow-primary/20">
-          <Upload className="w-5 h-5 mr-2" /> {showUploader ? "Hide Uploader" : "Upload Data"}
+          <Sparkles className="w-5 h-5 mr-2" /> {showUploader ? "Hide Form" : "Add Wealth Entry"}
         </Button>
       </div>
 
@@ -282,44 +274,51 @@ export default function WealthPage() {
         <Card className="border-white/10 bg-white/5 backdrop-blur-xl shadow-2xl relative animate-in slide-in-from-top-4 fade-in duration-300">
           <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none"></div>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 font-bold">Data Management</CardTitle>
-            <CardDescription>Upload a pipe-delimited (|) CSV file or paste from your clipboard.</CardDescription>
+            <CardTitle className="flex items-center gap-2 font-bold">Manual Entry</CardTitle>
+            <CardDescription>Add or update a wealth record for a specific month.</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="flex gap-4 mb-6 bg-background/20 p-4 rounded-xl border border-white/5">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 bg-background/20 p-4 rounded-xl border border-white/5">
               <div className="space-y-1">
                 <label className="text-xs text-muted-foreground ml-1">Year</label>
                 <Select value={uploadYear} onValueChange={(val) => { if(val) setUploadYear(val); }}>
-                  <SelectTrigger className="w-[140px] bg-background/50 border-white/10"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="w-full bg-background/50 border-white/10"><SelectValue /></SelectTrigger>
                   <SelectContent>{YEARS.map(y => <SelectItem key={y} value={y}>{y}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
               <div className="space-y-1">
                 <label className="text-xs text-muted-foreground ml-1">Month</label>
                 <Select value={uploadMonth} onValueChange={(val) => { if(val) setUploadMonth(val); }}>
-                  <SelectTrigger className="w-[120px] bg-background/50 border-white/10"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="w-full bg-background/50 border-white/10"><SelectValue /></SelectTrigger>
                   <SelectContent>{MONTHS.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
+              <div className="space-y-1">
+                <label className="text-xs text-muted-foreground ml-1">Type</label>
+                <Select value={manualType} onValueChange={(val) => { if(val) setManualType(val); }}>
+                  <SelectTrigger className="w-full bg-background/50 border-white/10"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {["NDB", "CAL UT", "Stock Market", "Treasury Bills", "NDB Wealth", "Commercial Bank"].map(t => (
+                      <SelectItem key={t} value={t}>{t}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs text-muted-foreground ml-1">Amount (LKR)</label>
+                <div className="flex gap-2">
+                  <Input 
+                    type="number" 
+                    placeholder="0.00" 
+                    value={manualAmount} 
+                    onChange={(e) => setManualAmount(e.target.value)}
+                    className="bg-background/50 border-white/10 h-10"
+                  />
+                  <Button onClick={handleManualAdd} className="bg-primary text-primary-foreground font-bold px-6 h-10">Add</Button>
+                </div>
+              </div>
             </div>
-
-            <Tabs defaultValue="text" className="w-full">
-              <TabsList className="mb-4 bg-background/50 border-white/10 max-w-sm">
-                <TabsTrigger value="text" className="data-[state=active]:bg-primary w-1/2">Paste Text</TabsTrigger>
-                <TabsTrigger value="file" className="data-[state=active]:bg-primary w-1/2">Upload CSV</TabsTrigger>
-              </TabsList>
-              <TabsContent value="file">
-                <Input type="file" accept=".csv,.txt" onChange={handleFileUpload} className="w-full bg-background/50 border-white/10 h-12 pt-3" />
-              </TabsContent>
-              <TabsContent value="text" className="space-y-4">
-                <textarea 
-                  value={csvText} onChange={(e) => setCsvText(e.target.value)} placeholder="NDB | | 26,587,380..."
-                  className="w-full rounded-md border border-white/10 bg-background/50 px-3 py-2 font-mono min-h-[120px]"
-                />
-                <Button onClick={handleTextUpload} className="bg-primary text-primary-foreground font-bold px-6">Parse Payload</Button>
-              </TabsContent>
-            </Tabs>
-            {uploadError && <p className="text-destructive mt-4 font-medium text-sm bg-destructive/10 p-3 rounded-md">{uploadError}</p>}
+            {uploadError && <p className="text-destructive mt-2 font-medium text-sm bg-destructive/10 p-3 rounded-md">{uploadError}</p>}
           </CardContent>
         </Card>
       )}
@@ -331,9 +330,10 @@ export default function WealthPage() {
         </div>
       ) : (
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full max-w-md grid-cols-2 bg-background/50 border-white/10 p-1 rounded-xl glass-panel">
+          <TabsList className="grid w-full max-w-lg grid-cols-3 bg-background/50 border-white/10 p-1 rounded-xl glass-panel">
             <TabsTrigger value="month" className="rounded-lg data-[state=active]:bg-primary">Month View</TabsTrigger>
-            <TabsTrigger value="year" className="rounded-lg data-[state=active]:bg-primary">Financial Year View</TabsTrigger>
+            <TabsTrigger value="year" className="rounded-lg data-[state=active]:bg-primary">FY View</TabsTrigger>
+            <TabsTrigger value="full" className="rounded-lg data-[state=active]:bg-primary">Full View</TabsTrigger>
           </TabsList>
 
           <TabsContent value="month" className="mt-6 space-y-6">
@@ -363,17 +363,31 @@ export default function WealthPage() {
                   </CardContent>
                 </Card>
 
-                {/* AI INSIGHTS CARD (MONTHLY) */}
-                <Card className="bg-gradient-to-br from-indigo-900/40 to-background border-indigo-500/20 shadow-xl shadow-indigo-900/10">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="flex items-center gap-2 text-sm font-medium text-indigo-300"><Sparkles className="w-4 h-4" /> AI Context (Sri Lanka)</CardTitle>
+                {/* SURPRISE CARD: DOMINANT ASSET */}
+                <Card className="bg-gradient-to-br from-amber-900/20 to-background border-amber-500/20 shadow-xl shadow-amber-900/5">
+                  <CardHeader className="pb-1">
+                    <CardTitle className="text-xs font-bold uppercase tracking-wider text-amber-200/60">Dominant Asset</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-sm text-indigo-100 leading-relaxed font-medium">
-                      {generateSriLankanAIInsight(activeMonthRecord.records, activeMonthTotal, monthVariance, "month")}
-                    </p>
+                    {monthPieData.length > 0 ? (
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="text-2xl font-black text-white">{monthPieData[0].name}</div>
+                          <div className="text-sm text-amber-400/80 font-bold mt-0.5">
+                            {((monthPieData[0].value / activeMonthTotal) * 100).toFixed(1)}% <span className="text-xs font-medium text-white/40 ml-1">of total wealth</span>
+                          </div>
+                        </div>
+                        <div className="p-2 bg-amber-500/10 rounded-xl">
+                          <PieIcon className="w-6 h-6 text-amber-400" />
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-muted-foreground italic text-sm py-2">No assets recorded</div>
+                    )}
                   </CardContent>
                 </Card>
+
+
 
                 <Card className="lg:col-span-3 bg-white/5 border-white/10">
                   <CardHeader><CardTitle className="text-base text-center">Wealth Breakdown</CardTitle></CardHeader>
@@ -446,17 +460,7 @@ export default function WealthPage() {
                   </CardContent>
                 </Card>
 
-                {/* AI INSIGHTS CARD (FY) */}
-                <Card className="lg:col-span-2 bg-gradient-to-br from-indigo-900/40 to-background border-indigo-500/20 shadow-xl shadow-indigo-900/10">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="flex items-center gap-2 text-base font-bold text-indigo-300"><Sparkles className="w-5 h-5 text-indigo-400" /> FY Engine (AI Analysis)</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-indigo-100 leading-relaxed font-medium">
-                      {generateSriLankanAIInsight(latestFyMonth?.records || [], fyTotal, fyVariance, "financial year")}
-                    </p>
-                  </CardContent>
-                </Card>
+
 
                 <Card className="lg:col-span-2 bg-white/5 border-white/10">
                   <CardHeader><CardTitle className="flex items-center gap-2"><LineChartIcon className="w-5 h-5 text-blue-400" /> Total Assets Trend</CardTitle></CardHeader>
@@ -503,7 +507,7 @@ export default function WealthPage() {
                           <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.1)" />
                           <XAxis dataKey="month" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
                           <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(val) => `${(val/1000000).toFixed(1)}M`} domain={['auto', 'auto']} />
-                          <Tooltip formatter={(val: any) => val.toLocaleString() + ' LKR'} />
+                          <Tooltip formatter={(val: any) => val.toLocaleString() + ' LKR'} contentStyle={{backgroundColor: 'rgba(15,23,42,0.9)', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px', backdropFilter: 'blur(8px)'}} />
                           <Line type="monotone" dataKey="Gain/Loss" stroke="rgba(255,255,255,0.2)" strokeWidth={2} dot={renderGainLossDot} activeDot={{ r: 8, fill: '#fff', strokeWidth: 0 }} />
                         </LineChart>
                       </ResponsiveContainer>
@@ -567,6 +571,63 @@ export default function WealthPage() {
 
               </div>
             ) : (<p className="p-8 text-center text-muted-foreground">No data available for this financial year.</p>)}
+          </TabsContent>
+
+          <TabsContent value="full" className="mt-6 space-y-6">
+            <div className="grid gap-6">
+              <Card className="bg-white/5 border-white/10">
+                <CardHeader><CardTitle className="flex items-center gap-2"><LineChartIcon className="w-5 h-5 text-blue-400" /> All-Time Assets Trend</CardTitle></CardHeader>
+                <CardContent>
+                  <div className="h-[400px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={fullTrendData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.1)" />
+                        <XAxis dataKey="month" stroke="#888888" fontSize={11} tickLine={false} axisLine={false} />
+                        <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(val) => `${(val/1000000).toFixed(1)}M`} domain={['auto', 'auto']} />
+                        <Tooltip formatter={(val: any) => val.toLocaleString() + ' LKR'} contentStyle={{backgroundColor: 'rgba(15,23,42,0.9)', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px', backdropFilter: 'blur(8px)'}} />
+                        <Line type="monotone" dataKey="Total Assets" stroke="#3b82f6" strokeWidth={4} dot={{ r: 4, fill: '#3b82f6' }} activeDot={{ r: 8 }} />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-white/5 border-white/10">
+                <CardHeader><CardTitle className="flex items-center gap-2"><LineChartIcon className="w-5 h-5 text-indigo-400" /> Capital Stack Evolution (Full Portfolio)</CardTitle></CardHeader>
+                <CardContent>
+                  <div className="h-[400px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart data={fullStackedAreaData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.1)" />
+                        <XAxis dataKey="month" stroke="#888888" fontSize={11} tickLine={false} axisLine={false} />
+                        <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(val) => `${(val/1000000).toFixed(1)}M`} domain={['auto', 'auto']} />
+                        <Tooltip formatter={(val: any) => val.toLocaleString() + ' LKR'} contentStyle={{backgroundColor: 'rgba(15,23,42,0.9)', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px', backdropFilter: 'blur(8px)'}} />
+                        {fullCategories.map((cat, idx) => (
+                          <Area key={cat} type="monotone" dataKey={cat} stackId="1" stroke={COLORS[idx % COLORS.length]} fill={COLORS[idx % COLORS.length]} fillOpacity={0.6} />
+                        ))}
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-white/5 border-white/10">
+                <CardHeader><CardTitle className="flex items-center gap-2"><TrendingUp className="w-5 h-5 text-emerald-400" /> All-Time Monthly Gain/Loss</CardTitle></CardHeader>
+                <CardContent>
+                  <div className="h-[300px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={fullGainLossData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.1)" />
+                        <XAxis dataKey="month" stroke="#888888" fontSize={11} tickLine={false} axisLine={false} />
+                        <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(val) => `${(val/1000000).toFixed(1)}M`} domain={['auto', 'auto']} />
+                        <Tooltip formatter={(val: any) => val.toLocaleString() + ' LKR'} contentStyle={{backgroundColor: 'rgba(15,23,42,0.9)', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px', backdropFilter: 'blur(8px)'}} />
+                        <Line type="monotone" dataKey="Gain/Loss" stroke="rgba(255,255,255,0.2)" strokeWidth={2} dot={renderGainLossDot} activeDot={{ r: 8, fill: '#fff', strokeWidth: 0 }} />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
         </Tabs>
       )}

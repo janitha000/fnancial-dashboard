@@ -19,7 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { PlusCircle, Upload, FileSpreadsheet, CheckCircle2, AlertCircle } from "lucide-react";
+import { PlusCircle, Upload, FileSpreadsheet, CheckCircle2, AlertCircle, Pencil } from "lucide-react";
 import { useStocks } from "@/context/StocksContext";
 import {
   FINANCIAL_YEAR_MONTHS,
@@ -27,7 +27,7 @@ import {
   currentFinancialMonth,
   generateFinancialYears,
 } from "@/context/TaxContext";
-import type { StockHolding } from "@/actions/stocks";
+import type { StockHolding, StockSnapshot } from "@/actions/stocks";
 
 type Tab = "manual" | "xlsx" | "dividend";
 
@@ -160,34 +160,53 @@ async function parseXlsx(file: File): Promise<StockHolding[]> {
 
 // ─── Component ──────────────────────────────────────────────────────────────
 
-export function AddStockModal() {
+export function AddStockModal({ initialData, trigger }: { initialData?: StockSnapshot, trigger?: React.ReactNode }) {
   const { upsertSnapshot, addDividend } = useStocks();
   const [isOpen, setIsOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<Tab>("manual");
+  const [activeTab, setActiveTab] = useState<Tab>(initialData && initialData.holdings.length > 0 ? "xlsx" : "manual");
 
   const availableYears = generateFinancialYears(4);
 
   // Shared state
-  const [fy, setFy] = useState(currentFinancialYear());
-  const [month, setMonth] = useState<string>(currentFinancialMonth());
+  const [fy, setFy] = useState(initialData?.financialYear || currentFinancialYear());
+  const [month, setMonth] = useState<string>(initialData?.month || currentFinancialMonth());
 
   // Dividend state
   const [dividendSecurity, setDividendSecurity] = useState("");
   const [dividendAmount, setDividendAmount] = useState("");
 
   // Manual form state
-  const [totalCost, setTotalCost] = useState("");
-  const [portfolioValue, setPortfolioValue] = useState("");
-  const [moneyOut, setMoneyOut] = useState("");
+  const [totalCost, setTotalCost] = useState(initialData?.totalCost ? String(initialData.totalCost) : "");
+  const [portfolioValue, setPortfolioValue] = useState(initialData?.portfolioValue ? String(initialData.portfolioValue) : "");
+  const [moneyOut, setMoneyOut] = useState(initialData?.moneyOut ? String(initialData.moneyOut) : "");
 
   // XLSX state
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [xlsxFile, setXlsxFile] = useState<File | null>(null);
-  const [xlsxHoldings, setXlsxHoldings] = useState<StockHolding[]>([]);
-  const [xlsxTotalCost, setXlsxTotalCost] = useState("");
-  const [xlsxMoneyOut, setXlsxMoneyOut] = useState("");
-  const [xlsxStatus, setXlsxStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+  const [xlsxHoldings, setXlsxHoldings] = useState<StockHolding[]>(initialData?.holdings || []);
+  const [xlsxTotalCost, setXlsxTotalCost] = useState(initialData?.totalCost ? String(initialData.totalCost) : "");
+  const [xlsxMoneyOut, setXlsxMoneyOut] = useState(initialData?.moneyOut ? String(initialData.moneyOut) : "");
+  const [xlsxStatus, setXlsxStatus] = useState<"idle" | "loading" | "success" | "error">(initialData && initialData.holdings.length > 0 ? "success" : "idle");
   const [xlsxError, setXlsxError] = useState("");
+
+  React.useEffect(() => {
+    if (isOpen && initialData) {
+      setFy(initialData.financialYear);
+      setMonth(initialData.month);
+      setTotalCost(String(initialData.totalCost));
+      setPortfolioValue(String(initialData.portfolioValue));
+      setMoneyOut(String(initialData.moneyOut));
+      if (initialData.holdings.length > 0) {
+        setXlsxHoldings(initialData.holdings);
+        setXlsxTotalCost(String(initialData.totalCost));
+        setXlsxMoneyOut(String(initialData.moneyOut));
+        setXlsxStatus("success");
+        setActiveTab("xlsx");
+      } else {
+        setActiveTab("manual");
+      }
+    }
+  }, [isOpen, initialData]);
 
   const reset = () => {
     setActiveTab("manual");
@@ -271,9 +290,14 @@ export function AddStockModal() {
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => { setIsOpen(open); if (!open) reset(); }}>
-      <DialogTrigger className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2 gap-2">
-        <PlusCircle className="h-4 w-4" />
-        Add / Import
+      {/* @ts-expect-error - local wrapper might not export asChild correctly */}
+      <DialogTrigger asChild>
+        {trigger || (
+          <Button className="gap-2">
+            <PlusCircle className="h-4 w-4" />
+            Add / Import
+          </Button>
+        )}
       </DialogTrigger>
 
       <DialogContent className="sm:max-w-[520px] bg-card border-white/10 text-card-foreground">

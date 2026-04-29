@@ -29,6 +29,8 @@ import {
   Area,
   BarChart,
   Bar,
+  LineChart,
+  Line,
   CartesianGrid,
   Legend,
   ResponsiveContainer,
@@ -38,6 +40,7 @@ import {
   Cell,
   PieChart,
   Pie,
+  ReferenceLine,
 } from "recharts";
 import { useStocks } from "@/context/StocksContext";
 import {
@@ -58,6 +61,7 @@ import {
   Wallet,
   ArrowUpRight,
   ArrowDownRight,
+  Pencil,
 } from "lucide-react";
 
 const fmt = (n: number) =>
@@ -131,7 +135,7 @@ export function StocksDashboard() {
 
   const [selectedYear, setSelectedYear] = useState(currentFinancialYear());
   const [selectedMonth, setSelectedMonth] = useState<string>(currentFinancialMonth());
-  const [viewMode, setViewMode] = useState<"monthly" | "fy">("monthly");
+  const [viewMode, setViewMode] = useState<"monthly" | "fy" | "full">("monthly");
 
   // ─── Month Navigation ──────────────────────────────────────────────────────
   const handlePrevMonth = () => {
@@ -218,6 +222,13 @@ export function StocksDashboard() {
     ? (gainLoss / currentSnap.totalCost) * 100
     : null;
 
+  const netGainLoss = currentSnap
+    ? currentSnap.holdings.reduce((sum, h) => sum + (h.unrealizedGainLoss || 0), 0)
+    : 0;
+  const netGainLossPct = currentSnap && currentSnap.totalCost > 0
+    ? (netGainLoss / currentSnap.totalCost) * 100
+    : null;
+
   const fyChartData = useMemo(() => {
     return FINANCIAL_YEAR_MONTHS.map((m) => {
       const snap = fySnapshots.find((s) => s.month === m);
@@ -229,6 +240,9 @@ export function StocksDashboard() {
         "Portfolio Value": snap?.portfolioValue ?? null,
         "Total Cost": snap?.totalCost ?? null,
         "Gain/Loss": snap ? snap.portfolioValue - snap.totalCost : null,
+        "Gain/Loss %": (snap && snap.totalCost > 0) ? ((snap.portfolioValue - snap.totalCost) / snap.totalCost) * 100 : null,
+        "Net Gain/Loss": snap ? snap.holdings.reduce((sum, h) => sum + (h.unrealizedGainLoss || 0), 0) : null,
+        "Net Gain/Loss %": (snap && snap.totalCost > 0) ? (snap.holdings.reduce((sum, h) => sum + (h.unrealizedGainLoss || 0), 0) / snap.totalCost) * 100 : null,
         "Money Out": snap?.moneyOut ?? null,
         "Dividends": totalDiv > 0 ? totalDiv : null,
       };
@@ -256,6 +270,42 @@ export function StocksDashboard() {
       .map(([security, amount]) => ({ security, amount }))
       .sort((a, b) => b.amount - a.amount);
   }, [fyDividends]);
+
+  const fullChartData = useMemo(() => {
+    const sorted = [...snapshots].sort((a, b) => {
+      const aStart = parseInt(a.financialYear.split("/")[0], 10);
+      const bStart = parseInt(b.financialYear.split("/")[0], 10);
+      if (aStart !== bStart) return aStart - bStart;
+      return FINANCIAL_YEAR_MONTHS.indexOf(a.month as any) - FINANCIAL_YEAR_MONTHS.indexOf(b.month as any);
+    });
+
+    return sorted.map((s) => {
+      const gl = s.portfolioValue - s.totalCost;
+      const netGl = s.holdings.reduce((sum, h) => sum + (h.unrealizedGainLoss || 0), 0);
+      const mDivs = dividends.filter(d => d.month === s.month && d.financialYear === s.financialYear);
+      const totalDiv = mDivs.reduce((sum, d) => sum + d.amount, 0);
+      return {
+        label: `${s.month} ${s.financialYear.split("/")[0]}`,
+        "Portfolio Value": s.portfolioValue,
+        "Total Cost": s.totalCost,
+        "Gain/Loss": gl,
+        "Gain/Loss %": s.totalCost > 0 ? (gl / s.totalCost) * 100 : 0,
+        "Net Gain/Loss": netGl,
+        "Net Gain/Loss %": s.totalCost > 0 ? (netGl / s.totalCost) * 100 : 0,
+        "Dividends": totalDiv > 0 ? totalDiv : null,
+      };
+    });
+  }, [snapshots, dividends]);
+
+  const fullDividendsPieData = useMemo(() => {
+    const map = new Map<string, number>();
+    dividends.forEach((d) => {
+      map.set(d.security, (map.get(d.security) || 0) + d.amount);
+    });
+    return Array.from(map.entries())
+      .map(([security, amount]) => ({ security, amount }))
+      .sort((a, b) => b.amount - a.amount);
+  }, [dividends]);
 
   const fyYieldData = useMemo(() => {
     const map = new Map<string, { amount: number; latestDivMonth: string; count: number }>();
@@ -385,10 +435,42 @@ export function StocksDashboard() {
             >
               FY View
             </Button>
+            <Button
+              variant={viewMode === "full" ? "default" : "ghost"}
+              onClick={() => setViewMode("full")}
+              className="h-8 rounded-lg"
+            >
+              Full View
+            </Button>
           </div>
         </div>
 
-        <AddStockModal />
+        <div className="flex items-center gap-2">
+          {viewMode === "monthly" && currentSnap && (
+            <div className="flex items-center gap-2">
+              <AddStockModal 
+                initialData={currentSnap}
+                trigger={
+                  <Button variant="outline" className="border-white/10 bg-white/5 hover:bg-white/10 text-xs h-10 px-3">
+                    <Pencil className="w-4 h-4 mr-2" /> Edit
+                  </Button>
+                }
+              />
+              <Button 
+                variant="outline" 
+                className="border-red-500/20 bg-red-500/5 hover:bg-red-500/10 text-red-400 text-xs h-10 px-3"
+                onClick={() => {
+                  if (confirm("Are you sure you want to delete this snapshot?")) {
+                    deleteSnapshot(currentSnap.id);
+                  }
+                }}
+              >
+                <Trash2 className="w-4 h-4 mr-2" /> Delete
+              </Button>
+            </div>
+          )}
+          <AddStockModal />
+        </div>
       </div>
 
       {/* ═══════════════ MONTHLY VIEW ═══════════════ */}
@@ -804,11 +886,10 @@ export function StocksDashboard() {
             </CardContent>
           </Card>
 
-          {/* Monthly Gain/Loss bar chart */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <Card>
               <CardHeader>
-                <CardTitle>Monthly Unrealized Gain / Loss</CardTitle>
+                <CardTitle>Monthly Gain / Loss (Absolute)</CardTitle>
                 <CardDescription>Portfolio Value minus Total Cost, per month</CardDescription>
               </CardHeader>
               <CardContent className="h-[300px]">
@@ -816,28 +897,18 @@ export function StocksDashboard() {
                   <BarChart data={fyChartData}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-white/5" />
                     <XAxis dataKey="month" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
-                    <YAxis
-                      stroke="#888888"
-                      fontSize={12}
-                      tickLine={false}
-                      axisLine={false}
-                      tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
-                    />
-                    <Tooltip
-                      cursor={{ fill: "rgba(255,255,255,0.04)" }}
-                      contentStyle={{
-                        backgroundColor: "hsl(var(--card))",
-                        borderColor: "hsl(var(--border))",
-                        borderRadius: "12px",
+                    <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
+                    <Tooltip 
+                      cursor={{ fill: "rgba(255,255,255,0.04)" }} 
+                      contentStyle={{ backgroundColor: "hsl(var(--card))", borderColor: "hsl(var(--border))", borderRadius: "12px" }} 
+                      formatter={(val: any, name: any, props: any) => {
+                        const pct = props.payload["Gain/Loss %"];
+                        return [`${val?.toLocaleString()} (${pct >= 0 ? "+" : ""}${pct?.toFixed(2)}%)`, "Gain/Loss"];
                       }}
-                      formatter={(val: any) => val?.toLocaleString()}
                     />
                     <Bar dataKey="Gain/Loss" radius={[6, 6, 0, 0]}>
                       {fyChartData.map((entry, i) => (
-                        <Cell
-                          key={i}
-                          fill={(entry["Gain/Loss"] ?? 0) >= 0 ? "#10b981" : "#f43f5e"}
-                        />
+                        <Cell key={i} fill={(entry["Gain/Loss"] ?? 0) >= 0 ? "#10b981" : "#f43f5e"} />
                       ))}
                     </Bar>
                   </BarChart>
@@ -845,34 +916,30 @@ export function StocksDashboard() {
               </CardContent>
             </Card>
 
-            {/* Money Out trend */}
             <Card>
               <CardHeader>
-                <CardTitle>Monthly Money Out</CardTitle>
-                <CardDescription>Cash income withdrawn from portfolio, per month</CardDescription>
+                <CardTitle>Monthly Net Gain / Loss (Absolute)</CardTitle>
+                <CardDescription>After commission, per month</CardDescription>
               </CardHeader>
               <CardContent className="h-[300px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={fyChartData}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-white/5" />
                     <XAxis dataKey="month" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
-                    <YAxis
-                      stroke="#888888"
-                      fontSize={12}
-                      tickLine={false}
-                      axisLine={false}
-                      tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
-                    />
-                    <Tooltip
-                      cursor={{ fill: "rgba(255,255,255,0.04)" }}
-                      contentStyle={{
-                        backgroundColor: "hsl(var(--card))",
-                        borderColor: "hsl(var(--border))",
-                        borderRadius: "12px",
+                    <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
+                    <Tooltip 
+                      cursor={{ fill: "rgba(255,255,255,0.04)" }} 
+                      contentStyle={{ backgroundColor: "hsl(var(--card))", borderColor: "hsl(var(--border))", borderRadius: "12px" }} 
+                      formatter={(val: any, name: any, props: any) => {
+                        const pct = props.payload["Net Gain/Loss %"];
+                        return [`${val?.toLocaleString()} (${pct >= 0 ? "+" : ""}${pct?.toFixed(2)}%)`, "Net Gain/Loss"];
                       }}
-                      formatter={(val: any) => val?.toLocaleString()}
                     />
-                    <Bar dataKey="Money Out" fill="#f59e0b" radius={[6, 6, 0, 0]} />
+                    <Bar dataKey="Net Gain/Loss" radius={[6, 6, 0, 0]}>
+                      {fyChartData.map((entry, i) => (
+                        <Cell key={i} fill={(entry["Net Gain/Loss"] ?? 0) >= 0 ? "#10b981" : "#f43f5e"} />
+                      ))}
+                    </Bar>
                   </BarChart>
                 </ResponsiveContainer>
               </CardContent>
@@ -1188,6 +1255,226 @@ export function StocksDashboard() {
             </Card>
           )}
         </>
+      )}
+
+      {/* ═══════════════ FULL VIEW ═══════════════ */}
+      {viewMode === "full" && (
+        <div className="space-y-6 animate-in fade-in zoom-in-95 duration-500">
+          <Card>
+            <CardHeader>
+              <CardTitle>Portfolio Value vs Cost — All Time Trend</CardTitle>
+              <CardDescription>Comprehensive growth of portfolio value vs total investment cost</CardDescription>
+            </CardHeader>
+            <CardContent className="h-[400px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={fullChartData}>
+                  <defs>
+                    <linearGradient id="gradFullValue" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+                    </linearGradient>
+                    <linearGradient id="gradFullCost" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.2} />
+                      <stop offset="95%" stopColor="#06b6d4" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-white/5" />
+                  <XAxis dataKey="label" stroke="#888888" fontSize={10} tickLine={false} axisLine={false} />
+                  <YAxis
+                    stroke="#888888"
+                    fontSize={12}
+                    tickLine={false}
+                    axisLine={false}
+                    tickFormatter={(v) => `${(v / 1_000_000).toFixed(1)}M`}
+                  />
+                  <Tooltip
+                    contentStyle={{ backgroundColor: "hsl(var(--card))", borderColor: "hsl(var(--border))", borderRadius: "12px" }}
+                    formatter={(val: any) => val?.toLocaleString()}
+                  />
+                  <Legend />
+                  <Area type="monotone" dataKey="Portfolio Value" stroke="#6366f1" strokeWidth={3} fill="url(#gradFullValue)" connectNulls />
+                  <Area type="monotone" dataKey="Total Cost" stroke="#06b6d4" strokeWidth={2} fill="url(#gradFullCost)" strokeDasharray="5 5" connectNulls />
+                </AreaChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>All-Time Monthly G/L (Absolute)</CardTitle>
+                <CardDescription>Historical G/L performance per month</CardDescription>
+              </CardHeader>
+              <CardContent className="h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={fullChartData}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-white/5" />
+                    <XAxis dataKey="label" stroke="#888888" fontSize={10} tickLine={false} axisLine={false} />
+                    <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
+                    <Tooltip 
+                      contentStyle={{ backgroundColor: "hsl(var(--card))", borderColor: "hsl(var(--border))", borderRadius: "12px" }} 
+                      formatter={(val: any, name: any, props: any) => {
+                        const pct = props.payload["Gain/Loss %"];
+                        return [`${val?.toLocaleString()} (${pct >= 0 ? "+" : ""}${pct?.toFixed(2)}%)`, "Gain/Loss"];
+                      }} 
+                    />
+                    <Bar dataKey="Gain/Loss">
+                      {fullChartData.map((entry, i) => (
+                        <Cell key={i} fill={(entry["Gain/Loss"] ?? 0) >= 0 ? "#10b981" : "#f43f5e"} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>All-Time Net G/L (Absolute)</CardTitle>
+                <CardDescription>Historical Net G/L (after commission)</CardDescription>
+              </CardHeader>
+              <CardContent className="h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={fullChartData}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-white/5" />
+                    <XAxis dataKey="label" stroke="#888888" fontSize={10} tickLine={false} axisLine={false} />
+                    <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
+                    <Tooltip 
+                      contentStyle={{ backgroundColor: "hsl(var(--card))", borderColor: "hsl(var(--border))", borderRadius: "12px" }} 
+                      formatter={(val: any, name: any, props: any) => {
+                        const pct = props.payload["Net Gain/Loss %"];
+                        return [`${val?.toLocaleString()} (${pct >= 0 ? "+" : ""}${pct?.toFixed(2)}%)`, "Net Gain/Loss"];
+                      }} 
+                    />
+                    <Bar dataKey="Net Gain/Loss">
+                      {fullChartData.map((entry, i) => (
+                        <Cell key={i} fill={(entry["Net Gain/Loss"] ?? 0) >= 0 ? "#10b981" : "#f43f5e"} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>All-Time Net G/L (%)</CardTitle>
+                <CardDescription>Historical Net growth percentage</CardDescription>
+              </CardHeader>
+              <CardContent className="h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={fullChartData}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-white/5" />
+                    <XAxis dataKey="label" stroke="#888888" fontSize={10} tickLine={false} axisLine={false} />
+                    <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(v) => `${v?.toFixed(1)}%`} />
+                    <Tooltip contentStyle={{ backgroundColor: "hsl(var(--card))", borderColor: "hsl(var(--border))", borderRadius: "12px" }} formatter={(val: any) => val?.toFixed(2) + '%'} />
+                    <ReferenceLine y={0} stroke="#ffffff" strokeOpacity={0.1} strokeDasharray="3 3" />
+                    <Line type="monotone" dataKey="Net Gain/Loss %" stroke="#10b981" strokeWidth={3} dot={{ r: 4, fill: '#10b981' }} activeDot={{ r: 8 }} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Monthly Dividends</CardTitle>
+                <CardDescription>All-time dividend income distribution</CardDescription>
+              </CardHeader>
+              <CardContent className="h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={fullChartData}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-white/5" />
+                    <XAxis dataKey="label" stroke="#888888" fontSize={10} tickLine={false} axisLine={false} />
+                    <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
+                    <Tooltip contentStyle={{ backgroundColor: "hsl(var(--card))", borderColor: "hsl(var(--border))", borderRadius: "12px" }} formatter={(val: any) => val?.toLocaleString()} />
+                    <Bar dataKey="Dividends" fill="#10b981" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          </div>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Total Dividend per Stock</CardTitle>
+              <CardDescription>Cumulative dividend income by security across all time</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {fullDividendsPieData.length > 0 ? (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+                  <div className="h-[400px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={fullDividendsPieData}
+                          dataKey="amount"
+                          nameKey="security"
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={80}
+                          outerRadius={120}
+                          paddingAngle={4}
+                          label={({ name, percent }: any) =>
+                            (percent ?? 0) > 0.03 ? `${String(name)} ${(((percent ?? 0)) * 100).toFixed(0)}%` : ""
+                          }
+                        >
+                          {fullDividendsPieData.map((_, i) => (
+                            <Cell key={i} fill={SECURITY_COLORS[i % SECURITY_COLORS.length]} />
+                          ))}
+                        </Pie>
+                        <Tooltip contentStyle={{ backgroundColor: "hsl(var(--card))", borderColor: "hsl(var(--border))", borderRadius: "12px" }} formatter={(val: any) => val?.toLocaleString()} />
+                        <Legend />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="border-white/10 hover:bg-transparent">
+                          <TableHead className="text-xs uppercase font-bold text-muted-foreground">Security</TableHead>
+                          <TableHead className="text-right text-xs uppercase font-bold text-muted-foreground">Total Dividend</TableHead>
+                          <TableHead className="text-right text-xs uppercase font-bold text-muted-foreground">Weight</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {fullDividendsPieData.map((row, idx) => {
+                          const total = fullDividendsPieData.reduce((s, r) => s + r.amount, 0);
+                          return (
+                            <TableRow key={row.security} className="border-white/5 hover:bg-white/5 transition-colors">
+                              <TableCell className="font-semibold flex items-center gap-2 py-3">
+                                <span className="w-2.5 h-2.5 rounded-full shadow-sm" style={{backgroundColor: SECURITY_COLORS[idx % SECURITY_COLORS.length]}}></span>
+                                {row.security}
+                              </TableCell>
+                              <TableCell className="text-right font-mono font-bold text-emerald-400 py-3">
+                                {fmt(row.amount)} <span className="text-[10px] text-muted-foreground ml-1">LKR</span>
+                              </TableCell>
+                              <TableCell className="text-right font-mono text-muted-foreground text-xs py-3">
+                                {((row.amount / total) * 100).toFixed(1)}%
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                        <TableRow className="border-t-2 border-white/10 font-bold bg-white/5 hover:bg-white/5">
+                          <TableCell className="py-4">TOTAL</TableCell>
+                          <TableCell className="text-right font-mono text-emerald-400 py-4">
+                            {fmt(fullDividendsPieData.reduce((s, r) => s + r.amount, 0))} LKR
+                          </TableCell>
+                          <TableCell className="text-right font-mono py-4">100%</TableCell>
+                        </TableRow>
+                      </TableBody>
+                    </Table>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex h-[300px] items-center justify-center text-muted-foreground italic text-sm">
+                  No dividends recorded yet
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       )}
     </div>
   );
