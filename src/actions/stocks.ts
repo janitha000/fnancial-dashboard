@@ -45,9 +45,20 @@ export type StockDividend = {
   month: string;
 };
 
+export type StockTransaction = {
+  id: string;
+  code: string;
+  date: string;
+  type: "BUY" | "SELL";
+  quantity: number;
+  price: number;
+  totalCost: number;
+};
+
 export type StocksDBState = {
   snapshots: StockSnapshot[];
   dividends: StockDividend[];
+  transactions?: StockTransaction[];
 };
 
 // ─── KV Persistence ──────────────────────────────────────────────────────────
@@ -59,9 +70,13 @@ export async function getStockData(): Promise<StocksDBState> {
     const data = await kv.get<StocksDBState | StockSnapshot[]>(DB_KEY);
     if (!data) return { snapshots: [], dividends: [] };
     if (Array.isArray(data)) {
-      return { snapshots: data, dividends: [] };
+      return { snapshots: data, dividends: [], transactions: [] };
     }
-    return { snapshots: data.snapshots || [], dividends: data.dividends || [] };
+    return { 
+      snapshots: data.snapshots || [], 
+      dividends: data.dividends || [],
+      transactions: data.transactions || []
+    };
   } catch (error) {
     console.error("Failed to fetch stock data from KV", error);
     return { snapshots: [], dividends: [] };
