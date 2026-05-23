@@ -51,6 +51,7 @@ import {
 } from "@/context/TaxContext";
 import { AddStockModal } from "./AddStockModal";
 import { StockwiseDashboard } from "./StockwiseDashboard";
+import { RealizedGainsDashboard } from "./RealizedGainsDashboard";
 import {
   Trash2,
   TrendingUp,
@@ -136,7 +137,7 @@ export function StocksDashboard() {
 
   const [selectedYear, setSelectedYear] = useState(currentFinancialYear());
   const [selectedMonth, setSelectedMonth] = useState<string>(currentFinancialMonth());
-  const [viewMode, setViewMode] = useState<"monthly" | "fy" | "full" | "stockwise">("monthly");
+  const [viewMode, setViewMode] = useState<"monthly" | "fy" | "full" | "stockwise" | "realized">("monthly");
 
   // ─── Month Navigation ──────────────────────────────────────────────────────
   const handlePrevMonth = () => {
@@ -450,6 +451,13 @@ export function StocksDashboard() {
             >
               Stockwise Data
             </Button>
+            <Button
+              variant={viewMode === "realized" ? "default" : "ghost"}
+              onClick={() => setViewMode("realized")}
+              className="h-8 rounded-lg"
+            >
+              Realized Gains
+            </Button>
           </div>
         </div>
 
@@ -484,6 +492,11 @@ export function StocksDashboard() {
       {/* ═══════════════ STOCKWISE VIEW ═══════════════ */}
       {viewMode === "stockwise" && (
         <StockwiseDashboard />
+      )}
+
+      {/* ═══════════════ REALIZED GAINS VIEW ═══════════════ */}
+      {viewMode === "realized" && (
+        <RealizedGainsDashboard />
       )}
 
       {/* ═══════════════ MONTHLY VIEW ═══════════════ */}
