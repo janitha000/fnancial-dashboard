@@ -41,6 +41,7 @@ import {
   PieChart,
   Pie,
   ReferenceLine,
+  Treemap,
 } from "recharts";
 import { useStocks } from "@/context/StocksContext";
 import {
@@ -79,6 +80,32 @@ const SECURITY_COLORS = [
   "#10b981", "#06b6d4", "#3b82f6", "#a78bfa", "#fb923c",
   "#34d399", "#f472b6", "#60a5fa", "#fbbf24", "#a3e635",
 ];
+
+// ─── Treemap Custom Content ───────────────────────────────────────────────────
+
+const CustomTreemapContent = (props: any) => {
+  const { x, y, width, height, index, name, fill } = props;
+  return (
+    <g>
+      <rect
+        x={x}
+        y={y}
+        width={width}
+        height={height}
+        style={{
+          fill: fill || SECURITY_COLORS[index % SECURITY_COLORS.length],
+          stroke: "hsl(var(--background))",
+          strokeWidth: 2,
+        }}
+      />
+      {width > 40 && height > 20 && (
+        <text x={x + width / 2} y={y + height / 2} textAnchor="middle" fill="#fff" fontSize={11} dominantBaseline="middle" className="font-bold drop-shadow-md">
+          {name}
+        </text>
+      )}
+    </g>
+  );
+};
 
 // ─── KPI Card ─────────────────────────────────────────────────────────────────
 
@@ -279,6 +306,56 @@ export function StocksDashboard() {
       .map(([security, amount]) => ({ security, amount }))
       .sort((a, b) => b.amount - a.amount);
   }, [fyDividends]);
+
+  const monthlyChartsData = useMemo(() => {
+    if (!currentSnap || currentSnap.holdings.length === 0) {
+      return { costVsValue: [], topMovers: [], unrealizedGL: [], treemap: [] };
+    }
+
+    const costVsValue: any[] = [];
+    const topMovers: any[] = [];
+    const unrealizedGL: any[] = [];
+    const treemap: any[] = [];
+
+    currentSnap.holdings.forEach((h) => {
+      const gl = h.marketValue - h.totalCost;
+      const prev = prevHoldingsMap.get(h.security);
+      
+      costVsValue.push({
+        security: h.security,
+        "Total Cost": h.totalCost,
+        "Market Value": h.marketValue,
+      });
+
+      if (h.marketValue > 0) {
+        treemap.push({
+          name: h.security,
+          size: h.marketValue,
+        });
+      }
+
+      unrealizedGL.push({
+        security: h.security,
+        "Unrealized G/L": gl,
+      });
+
+      let momPct = 0;
+      if (prev && prev.tradedPrice > 0) {
+        momPct = ((h.tradedPrice - prev.tradedPrice) / prev.tradedPrice) * 100;
+      }
+      topMovers.push({
+        security: h.security,
+        "MoM %": momPct,
+      });
+    });
+
+    topMovers.sort((a, b) => b["MoM %"] - a["MoM %"]);
+    unrealizedGL.sort((a, b) => b["Unrealized G/L"] - a["Unrealized G/L"]);
+    costVsValue.sort((a, b) => b["Market Value"] - a["Market Value"]);
+    treemap.sort((a, b) => b.size - a.size);
+    
+    return { costVsValue, topMovers, unrealizedGL, treemap };
+  }, [currentSnap, prevHoldingsMap]);
 
   const stockComparisonData = useMemo(() => {
     if (!currentSnap || currentSnap.holdings.length === 0) return [];
@@ -562,100 +639,188 @@ export function StocksDashboard() {
             />
           </div>
 
-          {/* Charts row */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Previous vs This Month Line Chart */}
+          {/* Charts Row 1 */}
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+            {/* Portfolio Treemap */}
             <Card>
               <CardHeader>
-                <CardTitle>MoM Stock Performance</CardTitle>
-                <CardDescription>Market value: Previous Month vs This Month</CardDescription>
+                <CardTitle>Portfolio Allocation</CardTitle>
+                <CardDescription>Market value by security</CardDescription>
               </CardHeader>
               <CardContent className="h-[300px]">
-                {stockComparisonData.length > 0 ? (
+                {monthlyChartsData.treemap.length > 0 ? (
                   <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={stockComparisonData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-white/5" />
-                      <XAxis dataKey="security" stroke="#888888" fontSize={10} tickLine={false} axisLine={false} />
-                      <YAxis
-                        stroke="#888888"
-                        fontSize={10}
-                        tickLine={false}
-                        axisLine={false}
-                        tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
-                      />
-                      <Tooltip itemStyle={{ color: '#fff' }} labelStyle={{ color: '#aaa' }}
+                    <Treemap
+                      data={monthlyChartsData.treemap}
+                      dataKey="size"
+                      stroke="#fff"
+                      content={<CustomTreemapContent />}
+                    >
+                      <Tooltip
+                        itemStyle={{ color: '#fff' }}
+                        labelStyle={{ color: '#aaa' }}
                         contentStyle={{
                           backgroundColor: "hsl(var(--card))",
                           borderColor: "hsl(var(--border))",
                           borderRadius: "12px",
                         }}
-                        formatter={(val: any) => val?.toLocaleString()}
+                        formatter={(val: any) => fmt(val)}
                       />
-                      <Legend />
-                      <Line type="monotone" dataKey="Previous Month" stroke="#94a3b8" strokeWidth={2} dot={{ r: 3 }} />
-                      <Line type="monotone" dataKey="This Month" stroke="#6366f1" strokeWidth={2} dot={{ r: 3 }} />
-                    </LineChart>
+                    </Treemap>
                   </ResponsiveContainer>
                 ) : (
                   <div className="flex h-full items-center justify-center text-muted-foreground italic text-sm">
-                    {currentSnap ? "No comparison data available" : `No snapshot for ${selectedMonth}`}
+                    {currentSnap ? "No holdings data" : `No snapshot for ${selectedMonth}`}
                   </div>
                 )}
               </CardContent>
             </Card>
 
-            {/* Holdings breakdown by security */}
+            {/* Grouped Bar: Total Cost vs Market Value */}
             <Card>
               <CardHeader>
-                <CardTitle>Holdings Breakdown</CardTitle>
-                <CardDescription>
-                  {holdingsPieData.length > 0
-                    ? "Market value by security (from XLSX)"
-                    : "Upload XLSX to see per-security breakdown"}
-                </CardDescription>
+                <CardTitle>Total Cost vs Market Value</CardTitle>
+                <CardDescription>Absolute comparison per security</CardDescription>
               </CardHeader>
               <CardContent className="h-[300px]">
-                {holdingsPieData.length > 0 ? (
+                {monthlyChartsData.costVsValue.length > 0 ? (
                   <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={holdingsPieData}
-                        dataKey="marketValue"
-                        nameKey="security"
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={55}
-                        outerRadius={90}
-                        paddingAngle={3}
-                        label={({ name, percent }: any) =>
-                          (percent ?? 0) > 0.05 ? `${String(name)} ${(((percent ?? 0)) * 100).toFixed(0)}%` : ""
-                        }
-                      >
-                        {holdingsPieData.map((_, i) => (
-                          <Cell key={i} fill={SECURITY_COLORS[i % SECURITY_COLORS.length]} />
-                        ))}
-                      </Pie>
-                      <Tooltip itemStyle={{ color: '#fff' }} labelStyle={{ color: '#aaa' }}
-                        contentStyle={{
-                          backgroundColor: "hsl(var(--card))",
-                          borderColor: "hsl(var(--border))",
-                          borderRadius: "12px",
-                        }}
-                        formatter={(val: any) => val?.toLocaleString()}
+                    <BarChart data={monthlyChartsData.costVsValue}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-white/5" />
+                      <XAxis dataKey="security" stroke="#888888" fontSize={10} tickLine={false} axisLine={false} />
+                      <YAxis stroke="#888888" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
+                      <Tooltip
+                        itemStyle={{ color: '#fff' }}
+                        labelStyle={{ color: '#aaa' }}
+                        cursor={{ fill: "rgba(255,255,255,0.04)" }}
+                        contentStyle={{ backgroundColor: "hsl(var(--card))", borderColor: "hsl(var(--border))", borderRadius: "12px" }}
+                        formatter={(val: any) => fmt(val)}
                       />
                       <Legend />
-                    </PieChart>
+                      <Bar dataKey="Total Cost" fill="#06b6d4" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="Market Value" fill="#6366f1" radius={[4, 4, 0, 0]} />
+                    </BarChart>
                   </ResponsiveContainer>
                 ) : (
                   <div className="flex h-full items-center justify-center text-muted-foreground italic text-sm">
-                    {currentSnap
-                      ? "No holdings data — upload XLSX for breakdown"
-                      : `No snapshot for ${selectedMonth}`}
+                    No data
                   </div>
                 )}
               </CardContent>
             </Card>
           </div>
+
+          {/* Charts Row 2 */}
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+            {/* Top Movers (MoM %) */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Top Movers (MoM %)</CardTitle>
+                <CardDescription>Traded price change from previous month</CardDescription>
+              </CardHeader>
+              <CardContent className="h-[300px]">
+                {monthlyChartsData.topMovers.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={monthlyChartsData.topMovers}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-white/5" />
+                      <XAxis dataKey="security" stroke="#888888" fontSize={10} tickLine={false} axisLine={false} />
+                      <YAxis stroke="#888888" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(v) => `${v}%`} />
+                      <Tooltip
+                        itemStyle={{ color: '#fff' }} labelStyle={{ color: '#aaa' }}
+                        cursor={{ fill: "rgba(255,255,255,0.04)" }}
+                        contentStyle={{ backgroundColor: "hsl(var(--card))", borderColor: "hsl(var(--border))", borderRadius: "12px" }}
+                        formatter={(val: any) => `${val.toFixed(2)}%`}
+                      />
+                      <ReferenceLine y={0} stroke="#ffffff" strokeOpacity={0.2} />
+                      <Bar dataKey="MoM %" radius={[4, 4, 0, 0]}>
+                        {monthlyChartsData.topMovers.map((entry, i) => (
+                          <Cell key={i} fill={entry["MoM %"] >= 0 ? "#10b981" : "#f43f5e"} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="flex h-full items-center justify-center text-muted-foreground italic text-sm">
+                    No data
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Divergent Bar: Unrealized G/L */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Unrealized G/L (Absolute)</CardTitle>
+                <CardDescription>Gain or Loss by security</CardDescription>
+              </CardHeader>
+              <CardContent className="h-[300px]">
+                {monthlyChartsData.unrealizedGL.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={monthlyChartsData.unrealizedGL}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-white/5" />
+                      <XAxis dataKey="security" stroke="#888888" fontSize={10} tickLine={false} axisLine={false} />
+                      <YAxis stroke="#888888" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
+                      <Tooltip
+                        itemStyle={{ color: '#fff' }} labelStyle={{ color: '#aaa' }}
+                        cursor={{ fill: "rgba(255,255,255,0.04)" }}
+                        contentStyle={{ backgroundColor: "hsl(var(--card))", borderColor: "hsl(var(--border))", borderRadius: "12px" }}
+                        formatter={(val: any) => fmt(val)}
+                      />
+                      <ReferenceLine y={0} stroke="#ffffff" strokeOpacity={0.2} />
+                      <Bar dataKey="Unrealized G/L" radius={[4, 4, 0, 0]}>
+                        {monthlyChartsData.unrealizedGL.map((entry, i) => (
+                          <Cell key={i} fill={entry["Unrealized G/L"] >= 0 ? "#10b981" : "#f43f5e"} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="flex h-full items-center justify-center text-muted-foreground italic text-sm">
+                    No data
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+          
+          <Card>
+            <CardHeader>
+              <CardTitle>MoM Stock Performance</CardTitle>
+              <CardDescription>Market value: Previous Month vs This Month</CardDescription>
+            </CardHeader>
+            <CardContent className="h-[300px]">
+              {stockComparisonData.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={stockComparisonData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-white/5" />
+                    <XAxis dataKey="security" stroke="#888888" fontSize={10} tickLine={false} axisLine={false} />
+                    <YAxis
+                      stroke="#888888"
+                      fontSize={10}
+                      tickLine={false}
+                      axisLine={false}
+                      tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
+                    />
+                    <Tooltip itemStyle={{ color: '#fff' }} labelStyle={{ color: '#aaa' }}
+                      contentStyle={{
+                        backgroundColor: "hsl(var(--card))",
+                        borderColor: "hsl(var(--border))",
+                        borderRadius: "12px",
+                      }}
+                      formatter={(val: any) => val?.toLocaleString()}
+                    />
+                    <Legend />
+                    <Line type="monotone" dataKey="Previous Month" stroke="#94a3b8" strokeWidth={2} dot={{ r: 3 }} />
+                    <Line type="monotone" dataKey="This Month" stroke="#6366f1" strokeWidth={2} dot={{ r: 3 }} />
+                  </LineChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex h-full items-center justify-center text-muted-foreground italic text-sm">
+                  {currentSnap ? "No comparison data available" : `No snapshot for ${selectedMonth}`}
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
           {/* Holdings Table */}
           {currentSnap && currentSnap.holdings.length > 0 && (
