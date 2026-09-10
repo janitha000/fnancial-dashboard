@@ -69,6 +69,9 @@ import {
 const fmt = (n: number) =>
   n.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 
+const fmtPrice = (n: number) =>
+  n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
 const fmtPct = (n: number) => `${n >= 0 ? "+" : ""}${n.toFixed(2)}%`;
 
 const SECURITY_COLORS = [
@@ -683,17 +686,33 @@ export function StocksDashboard() {
                       const diffTraded = prev ? h.tradedPrice - prev.tradedPrice : 0;
                       const diffCost = prev ? h.totalCost - prev.totalCost : 0;
                       const diffMarketValue = prev ? h.marketValue - prev.marketValue : 0;
+                      const diffQuantity = prev ? h.quantity - prev.quantity : 0;
+                      const diffAvgPrice = prev ? h.avgPrice - prev.avgPrice : 0;
 
                       // Derive explicitly in case of bad historic parses
                       const derivedGL = h.marketValue - h.totalCost;
                       const derivedPct = h.totalCost > 0 ? (derivedGL / h.totalCost) * 100 : 0;
+                      
+                      const prevDerivedGL = prev ? prev.marketValue - prev.totalCost : 0;
+                      const prevDerivedPct = prev && prev.totalCost > 0 ? (prevDerivedGL / prev.totalCost) * 100 : 0;
+                      
+                      const diffGL = prev ? derivedGL - prevDerivedGL : 0;
+                      const diffGLPct = prev ? derivedPct - prevDerivedPct : 0;
 
-                      const formatDiff = (d: number) => {
-                        if (Math.abs(d) < 0.01) return null;
+                      const formatDiff = (d: number, isPrice = false, isPct = false) => {
+                        if (Math.abs(d) < (isPct || isPrice ? 0.01 : 1)) return null;
                         const isPos = d > 0;
+                        let formattedVal;
+                        if (isPct) {
+                          formattedVal = Math.abs(d).toFixed(2) + "%";
+                        } else if (isPrice) {
+                          formattedVal = fmtPrice(Math.abs(d));
+                        } else {
+                          formattedVal = fmt(Math.abs(d));
+                        }
                         return (
                           <span className={`text-[10px] block mt-0.5 ${isPos ? 'text-emerald-400/80' : 'text-red-400/80'}`}>
-                            {isPos ? '▲' : '▼'} {fmt(Math.abs(d))}
+                            {isPos ? '▲' : '▼'} {formattedVal}
                           </span>
                         );
                       };
@@ -701,33 +720,41 @@ export function StocksDashboard() {
                       return (
                         <TableRow key={i} className="group transition-colors">
                           <TableCell className="font-semibold">{h.security}</TableCell>
-                          <TableCell className="text-right font-mono">{fmt(h.quantity)}</TableCell>
-                          <TableCell className="text-right font-mono">{fmt(h.avgPrice)}</TableCell>
+                          <TableCell className="text-right font-mono flex-col justify-end">
+                            <div>{fmt(h.quantity)}</div>
+                            {formatDiff(diffQuantity)}
+                          </TableCell>
+                          <TableCell className="text-right font-mono flex-col justify-end">
+                            <div>{fmtPrice(h.avgPrice)}</div>
+                            {formatDiff(diffAvgPrice, true)}
+                          </TableCell>
                           <TableCell className="text-right font-mono flex-col justify-end">
                             <div>{fmt(h.totalCost)}</div>
                             {formatDiff(diffCost)}
                           </TableCell>
                           <TableCell className="text-right font-mono flex-col justify-end">
-                            <div>{fmt(h.tradedPrice)}</div>
-                            {formatDiff(diffTraded)}
+                            <div>{fmtPrice(h.tradedPrice)}</div>
+                            {formatDiff(diffTraded, true)}
                           </TableCell>
                           <TableCell className="text-right font-mono font-bold flex-col justify-end">
                             <div>{fmt(h.marketValue)}</div>
                             {formatDiff(diffMarketValue)}
                           </TableCell>
                           <TableCell
-                            className={`text-right font-mono font-bold ${
+                            className={`text-right font-mono font-bold flex-col justify-end ${
                               derivedGL >= 0 ? "text-emerald-400" : "text-red-400"
                             }`}
                           >
-                            {fmt(derivedGL)}
+                            <div>{fmt(derivedGL)}</div>
+                            {formatDiff(diffGL)}
                           </TableCell>
                           <TableCell
-                            className={`text-right font-mono ${
+                            className={`text-right font-mono flex-col justify-end ${
                               derivedPct >= 0 ? "text-emerald-400" : "text-red-400"
                             }`}
                           >
-                            {fmtPct(derivedPct)}
+                            <div>{fmtPct(derivedPct)}</div>
+                            {formatDiff(diffGLPct, false, true)}
                           </TableCell>
                         </TableRow>
                       );
