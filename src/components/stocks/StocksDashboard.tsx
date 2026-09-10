@@ -76,9 +76,9 @@ const fmtPrice = (n: number) =>
 const fmtPct = (n: number) => `${n >= 0 ? "+" : ""}${n.toFixed(2)}%`;
 
 const SECURITY_COLORS = [
-  "#6366f1", "#8b5cf6", "#ec4899", "#f43f5e", "#f59e0b",
-  "#10b981", "#06b6d4", "#3b82f6", "#a78bfa", "#fb923c",
-  "#34d399", "#f472b6", "#60a5fa", "#fbbf24", "#a3e635",
+  "#4C72B0", "#DD8452", "#55A868", "#C44E52", "#8172B2",
+  "#937860", "#DA8BC3", "#8C8C8C", "#CCB974", "#64B5CD",
+  /* unused */
 ];
 
 // ─── Treemap Custom Content ───────────────────────────────────────────────────
@@ -697,8 +697,8 @@ export function StocksDashboard() {
                         formatter={(val: any) => fmt(val)}
                       />
                       <Legend />
-                      <Bar dataKey="Total Cost" fill="#06b6d4" radius={[4, 4, 0, 0]} />
-                      <Bar dataKey="Market Value" fill="#6366f1" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="Total Cost" fill="#8C8C8C" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="Market Value" fill="#4C72B0" radius={[4, 4, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 ) : (
@@ -734,7 +734,7 @@ export function StocksDashboard() {
                       <ReferenceLine y={0} stroke="#ffffff" strokeOpacity={0.2} />
                       <Bar dataKey="MoM %" radius={[4, 4, 0, 0]}>
                         {monthlyChartsData.topMovers.map((entry, i) => (
-                          <Cell key={i} fill={entry["MoM %"] >= 0 ? "#10b981" : "#f43f5e"} />
+                          <Cell key={i} fill={entry["MoM %"] >= 0 ? "#55A868" : "#C44E52"} />
                         ))}
                       </Bar>
                     </BarChart>
@@ -769,7 +769,7 @@ export function StocksDashboard() {
                       <ReferenceLine y={0} stroke="#ffffff" strokeOpacity={0.2} />
                       <Bar dataKey="Unrealized G/L" radius={[4, 4, 0, 0]}>
                         {monthlyChartsData.unrealizedGL.map((entry, i) => (
-                          <Cell key={i} fill={entry["Unrealized G/L"] >= 0 ? "#10b981" : "#f43f5e"} />
+                          <Cell key={i} fill={entry["Unrealized G/L"] >= 0 ? "#55A868" : "#C44E52"} />
                         ))}
                       </Bar>
                     </BarChart>
@@ -810,8 +810,8 @@ export function StocksDashboard() {
                       formatter={(val: any) => val?.toLocaleString()}
                     />
                     <Legend />
-                    <Line type="monotone" dataKey="Previous Month" stroke="#94a3b8" strokeWidth={2} dot={{ r: 3 }} />
-                    <Line type="monotone" dataKey="This Month" stroke="#6366f1" strokeWidth={2} dot={{ r: 3 }} />
+                    <Line type="monotone" dataKey="Previous Month" stroke="#8C8C8C" strokeWidth={2} dot={{ r: 3 }} />
+                    <Line type="monotone" dataKey="This Month" stroke="#4C72B0" strokeWidth={2} dot={{ r: 3 }} />
                   </LineChart>
                 </ResponsiveContainer>
               ) : (
@@ -1060,12 +1060,12 @@ export function StocksDashboard() {
                 <AreaChart data={fyChartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                   <defs>
                     <linearGradient id="gradValue" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+                      <stop offset="5%" stopColor="#4C72B0" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="#4C72B0" stopOpacity={0} />
                     </linearGradient>
                     <linearGradient id="gradCost" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.2} />
-                      <stop offset="95%" stopColor="#06b6d4" stopOpacity={0} />
+                      <stop offset="5%" stopColor="#8C8C8C" stopOpacity={0.2} />
+                      <stop offset="95%" stopColor="#8C8C8C" stopOpacity={0} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-white/5" />
@@ -1090,21 +1090,21 @@ export function StocksDashboard() {
                   <Area
                     type="monotone"
                     dataKey="Portfolio Value"
-                    stroke="#6366f1"
+                    stroke="#4C72B0"
                     strokeWidth={2.5}
                     fill="url(#gradValue)"
                     connectNulls
-                    dot={{ fill: "#6366f1", r: 4 }}
+                    dot={{ fill: "#4C72B0", r: 4 }}
                   />
                   <Area
                     type="monotone"
                     dataKey="Total Cost"
-                    stroke="#06b6d4"
+                    stroke="#8C8C8C"
                     strokeWidth={2}
                     fill="url(#gradCost)"
                     strokeDasharray="5 5"
                     connectNulls
-                    dot={{ fill: "#06b6d4", r: 3 }}
+                    dot={{ fill: "#8C8C8C", r: 3 }}
                   />
                 </AreaChart>
               </ResponsiveContainer>
@@ -1133,7 +1133,7 @@ export function StocksDashboard() {
                     />
                     <Bar dataKey="Gain/Loss" radius={[6, 6, 0, 0]}>
                       {fyChartData.map((entry, i) => (
-                        <Cell key={i} fill={(entry["Gain/Loss"] ?? 0) >= 0 ? "#10b981" : "#f43f5e"} />
+                        <Cell key={i} fill={(entry["Gain/Loss"] ?? 0) >= 0 ? "#55A868" : "#C44E52"} />
                       ))}
                     </Bar>
                   </BarChart>
@@ -1162,7 +1162,7 @@ export function StocksDashboard() {
                     />
                     <Bar dataKey="Net Gain/Loss" radius={[6, 6, 0, 0]}>
                       {fyChartData.map((entry, i) => (
-                        <Cell key={i} fill={(entry["Net Gain/Loss"] ?? 0) >= 0 ? "#10b981" : "#f43f5e"} />
+                        <Cell key={i} fill={(entry["Net Gain/Loss"] ?? 0) >= 0 ? "#55A868" : "#C44E52"} />
                       ))}
                     </Bar>
                   </BarChart>
@@ -1199,7 +1199,7 @@ export function StocksDashboard() {
                       }}
                       formatter={(val: any) => val?.toLocaleString()}
                     />
-                    <Bar dataKey="Dividends" fill="#10b981" radius={[6, 6, 0, 0]} />
+                    <Bar dataKey="Dividends" fill="#55A868" radius={[6, 6, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </CardContent>
@@ -1495,12 +1495,12 @@ export function StocksDashboard() {
                 <AreaChart data={fullChartData}>
                   <defs>
                     <linearGradient id="gradFullValue" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+                      <stop offset="5%" stopColor="#4C72B0" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="#4C72B0" stopOpacity={0} />
                     </linearGradient>
                     <linearGradient id="gradFullCost" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.2} />
-                      <stop offset="95%" stopColor="#06b6d4" stopOpacity={0} />
+                      <stop offset="5%" stopColor="#8C8C8C" stopOpacity={0.2} />
+                      <stop offset="95%" stopColor="#8C8C8C" stopOpacity={0} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-white/5" />
@@ -1517,8 +1517,8 @@ export function StocksDashboard() {
                     formatter={(val: any) => val?.toLocaleString()}
                   />
                   <Legend />
-                  <Area type="monotone" dataKey="Portfolio Value" stroke="#6366f1" strokeWidth={3} fill="url(#gradFullValue)" connectNulls />
-                  <Area type="monotone" dataKey="Total Cost" stroke="#06b6d4" strokeWidth={2} fill="url(#gradFullCost)" strokeDasharray="5 5" connectNulls />
+                  <Area type="monotone" dataKey="Portfolio Value" stroke="#4C72B0" strokeWidth={3} fill="url(#gradFullValue)" connectNulls />
+                  <Area type="monotone" dataKey="Total Cost" stroke="#8C8C8C" strokeWidth={2} fill="url(#gradFullCost)" strokeDasharray="5 5" connectNulls />
                 </AreaChart>
               </ResponsiveContainer>
             </CardContent>
@@ -1545,7 +1545,7 @@ export function StocksDashboard() {
                     />
                     <Bar dataKey="Gain/Loss">
                       {fullChartData.map((entry, i) => (
-                        <Cell key={i} fill={(entry["Gain/Loss"] ?? 0) >= 0 ? "#10b981" : "#f43f5e"} />
+                        <Cell key={i} fill={(entry["Gain/Loss"] ?? 0) >= 0 ? "#55A868" : "#C44E52"} />
                       ))}
                     </Bar>
                   </BarChart>
@@ -1573,7 +1573,7 @@ export function StocksDashboard() {
                     />
                     <Bar dataKey="Net Gain/Loss">
                       {fullChartData.map((entry, i) => (
-                        <Cell key={i} fill={(entry["Net Gain/Loss"] ?? 0) >= 0 ? "#10b981" : "#f43f5e"} />
+                        <Cell key={i} fill={(entry["Net Gain/Loss"] ?? 0) >= 0 ? "#55A868" : "#C44E52"} />
                       ))}
                     </Bar>
                   </BarChart>
@@ -1596,7 +1596,7 @@ export function StocksDashboard() {
                     <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(v) => `${v?.toFixed(1)}%`} />
                     <Tooltip itemStyle={{ color: '#fff' }} labelStyle={{ color: '#aaa' }} contentStyle={{ backgroundColor: "hsl(var(--card))", borderColor: "hsl(var(--border))", borderRadius: "12px" }} formatter={(val: any) => val?.toFixed(2) + '%'} />
                     <ReferenceLine y={0} stroke="#ffffff" strokeOpacity={0.1} strokeDasharray="3 3" />
-                    <Line type="monotone" dataKey="Net Gain/Loss %" stroke="#10b981" strokeWidth={3} dot={{ r: 4, fill: '#10b981' }} activeDot={{ r: 8 }} />
+                    <Line type="monotone" dataKey="Net Gain/Loss %" stroke="#55A868" strokeWidth={3} dot={{ r: 4, fill: '#55A868' }} activeDot={{ r: 8 }} />
                   </LineChart>
                 </ResponsiveContainer>
               </CardContent>
@@ -1614,7 +1614,7 @@ export function StocksDashboard() {
                     <XAxis dataKey="label" stroke="#888888" fontSize={10} tickLine={false} axisLine={false} />
                     <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
                     <Tooltip itemStyle={{ color: '#fff' }} labelStyle={{ color: '#aaa' }} contentStyle={{ backgroundColor: "hsl(var(--card))", borderColor: "hsl(var(--border))", borderRadius: "12px" }} formatter={(val: any) => val?.toLocaleString()} />
-                    <Bar dataKey="Dividends" fill="#10b981" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="Dividends" fill="#55A868" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </CardContent>
