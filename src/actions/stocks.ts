@@ -33,6 +33,7 @@ export type StockSnapshot = {
   month: string;          // e.g. "Apr"
   totalCost: number;
   portfolioValue: number;
+  cashAvailable?: number; // Cash available in account
   moneyOut: number;       // cash taken out / income withdrawn
   holdings: StockHolding[];
 };

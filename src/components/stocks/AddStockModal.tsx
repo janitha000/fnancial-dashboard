@@ -178,6 +178,7 @@ export function AddStockModal({ initialData, trigger }: { initialData?: StockSna
   // Manual form state
   const [totalCost, setTotalCost] = useState(initialData?.totalCost ? String(initialData.totalCost) : "");
   const [portfolioValue, setPortfolioValue] = useState(initialData?.portfolioValue ? String(initialData.portfolioValue) : "");
+  const [cashAvailable, setCashAvailable] = useState(initialData?.cashAvailable ? String(initialData.cashAvailable) : "");
   const [moneyOut, setMoneyOut] = useState(initialData?.moneyOut ? String(initialData.moneyOut) : "");
 
   // XLSX state
@@ -185,6 +186,7 @@ export function AddStockModal({ initialData, trigger }: { initialData?: StockSna
   const [xlsxFile, setXlsxFile] = useState<File | null>(null);
   const [xlsxHoldings, setXlsxHoldings] = useState<StockHolding[]>(initialData?.holdings || []);
   const [xlsxTotalCost, setXlsxTotalCost] = useState(initialData?.totalCost ? String(initialData.totalCost) : "");
+  const [xlsxCashAvailable, setXlsxCashAvailable] = useState(initialData?.cashAvailable ? String(initialData.cashAvailable) : "");
   const [xlsxMoneyOut, setXlsxMoneyOut] = useState(initialData?.moneyOut ? String(initialData.moneyOut) : "");
   const [xlsxStatus, setXlsxStatus] = useState<"idle" | "loading" | "success" | "error">(initialData && initialData.holdings.length > 0 ? "success" : "idle");
   const [xlsxError, setXlsxError] = useState("");
@@ -195,10 +197,12 @@ export function AddStockModal({ initialData, trigger }: { initialData?: StockSna
       setMonth(initialData.month);
       setTotalCost(String(initialData.totalCost));
       setPortfolioValue(String(initialData.portfolioValue));
+      setCashAvailable(initialData.cashAvailable ? String(initialData.cashAvailable) : "");
       setMoneyOut(String(initialData.moneyOut));
       if (initialData.holdings.length > 0) {
         setXlsxHoldings(initialData.holdings);
         setXlsxTotalCost(String(initialData.totalCost));
+        setXlsxCashAvailable(initialData.cashAvailable ? String(initialData.cashAvailable) : "");
         setXlsxMoneyOut(String(initialData.moneyOut));
         setXlsxStatus("success");
         setActiveTab("xlsx");
@@ -214,10 +218,12 @@ export function AddStockModal({ initialData, trigger }: { initialData?: StockSna
     setMonth(currentFinancialMonth());
     setTotalCost("");
     setPortfolioValue("");
+    setCashAvailable("");
     setMoneyOut("");
     setXlsxFile(null);
     setXlsxHoldings([]);
     setXlsxTotalCost("");
+    setXlsxCashAvailable("");
     setXlsxMoneyOut("");
     setXlsxStatus("idle");
     setXlsxError("");
@@ -252,6 +258,7 @@ export function AddStockModal({ initialData, trigger }: { initialData?: StockSna
       month,
       totalCost: Number(totalCost),
       portfolioValue: Number(portfolioValue),
+      cashAvailable: cashAvailable ? Number(cashAvailable) : 0,
       moneyOut: Number(moneyOut) || 0,
       holdings: [],
     });
@@ -268,6 +275,7 @@ export function AddStockModal({ initialData, trigger }: { initialData?: StockSna
       month,
       totalCost: Number(xlsxTotalCost),
       portfolioValue: derivedPortfolioValue,
+      cashAvailable: xlsxCashAvailable ? Number(xlsxCashAvailable) : 0,
       moneyOut: Number(xlsxMoneyOut) || 0,
       holdings: xlsxHoldings,
     });
@@ -403,6 +411,17 @@ export function AddStockModal({ initialData, trigger }: { initialData?: StockSna
               />
             </div>
             <div className="space-y-2">
+              <Label htmlFor="stock-cash-available">Cash Available (LKR)</Label>
+              <Input
+                id="stock-cash-available"
+                type="number"
+                value={cashAvailable}
+                onChange={(e) => setCashAvailable(e.target.value)}
+                placeholder="Cash in account"
+                className="bg-background/50 border-white/10"
+              />
+            </div>
+            <div className="space-y-2">
               <Label htmlFor="stock-money-out">Money Out / Income (LKR)</Label>
               <Input
                 id="stock-money-out"
@@ -484,6 +503,18 @@ export function AddStockModal({ initialData, trigger }: { initialData?: StockSna
                 placeholder="Manually enter total amount invested"
                 className="bg-background/50 border-white/10"
                 required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="xlsx-cash-available">Cash Available (LKR)</Label>
+              <Input
+                id="xlsx-cash-available"
+                type="number"
+                value={xlsxCashAvailable}
+                onChange={(e) => setXlsxCashAvailable(e.target.value)}
+                placeholder="Cash in account"
+                className="bg-background/50 border-white/10"
               />
             </div>
 

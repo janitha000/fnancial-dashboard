@@ -218,7 +218,7 @@ export function StocksDashboard() {
   }, [currentSnap]);
 
   const gainLoss = currentSnap
-    ? currentSnap.portfolioValue - currentSnap.totalCost
+    ? (currentSnap.portfolioValue + (currentSnap.cashAvailable || 0)) - currentSnap.totalCost
     : 0;
   const gainLossPct = currentSnap && currentSnap.totalCost > 0
     ? (gainLoss / currentSnap.totalCost) * 100
@@ -237,12 +237,16 @@ export function StocksDashboard() {
       const mDivs = fyDividends.filter(d => d.month === m);
       const totalDiv = mDivs.reduce((sum, d) => sum + d.amount, 0);
 
+      const snapGainLoss = snap ? (snap.portfolioValue + (snap.cashAvailable || 0)) - snap.totalCost : null;
+      const snapGainLossPct = snap && snap.totalCost > 0 ? (snapGainLoss! / snap.totalCost) * 100 : null;
+
       return {
         month: m,
         "Portfolio Value": snap?.portfolioValue ?? null,
+        "Cash Available": snap?.cashAvailable ?? null,
         "Total Cost": snap?.totalCost ?? null,
-        "Gain/Loss": snap ? snap.portfolioValue - snap.totalCost : null,
-        "Gain/Loss %": (snap && snap.totalCost > 0) ? ((snap.portfolioValue - snap.totalCost) / snap.totalCost) * 100 : null,
+        "Gain/Loss": snapGainLoss,
+        "Gain/Loss %": snapGainLossPct,
         "Net Gain/Loss": snap ? snap.holdings.reduce((sum, h) => sum + (h.unrealizedGainLoss || 0), 0) : null,
         "Net Gain/Loss %": (snap && snap.totalCost > 0) ? (snap.holdings.reduce((sum, h) => sum + (h.unrealizedGainLoss || 0), 0) / snap.totalCost) * 100 : null,
         "Money Out": snap?.moneyOut ?? null,
@@ -273,6 +277,19 @@ export function StocksDashboard() {
       .sort((a, b) => b.amount - a.amount);
   }, [fyDividends]);
 
+  const stockComparisonData = useMemo(() => {
+    if (!currentSnap || currentSnap.holdings.length === 0) return [];
+    
+    return currentSnap.holdings.map((h) => {
+      const prev = prevHoldingsMap.get(h.security);
+      return {
+        security: h.security,
+        "Previous Month": prev ? prev.marketValue : 0,
+        "This Month": h.marketValue,
+      };
+    }).sort((a, b) => b["This Month"] - a["This Month"]);
+  }, [currentSnap, prevHoldingsMap]);
+
   const fullChartData = useMemo(() => {
     const sorted = [...snapshots].sort((a, b) => {
       const aStart = parseInt(a.financialYear.split("/")[0], 10);
@@ -282,7 +299,7 @@ export function StocksDashboard() {
     });
 
     return sorted.map((s) => {
-      const gl = s.portfolioValue - s.totalCost;
+      const gl = (s.portfolioValue + (s.cashAvailable || 0)) - s.totalCost;
       const netGl = s.holdings.reduce((sum, h) => sum + (h.unrealizedGainLoss || 0), 0);
       const mDivs = dividends.filter(d => d.month === s.month && d.financialYear === s.financialYear);
       const totalDiv = mDivs.reduce((sum, d) => sum + d.amount, 0);
@@ -544,37 +561,25 @@ export function StocksDashboard() {
 
           {/* Charts row */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Value vs Cost Donut */}
+            {/* Previous vs This Month Line Chart */}
             <Card>
               <CardHeader>
-                <CardTitle>Value vs Cost</CardTitle>
-                <CardDescription>Portfolio market value compared to total invested cost</CardDescription>
+                <CardTitle>MoM Stock Performance</CardTitle>
+                <CardDescription>Market value: Previous Month vs This Month</CardDescription>
               </CardHeader>
               <CardContent className="h-[300px]">
-                {currentSnap ? (
+                {stockComparisonData.length > 0 ? (
                   <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={[
-                          { name: "Total Cost", value: currentSnap.totalCost },
-                          {
-                            name: gainLoss >= 0 ? "Unrealized Gain" : "Unrealized Loss",
-                            value: Math.abs(gainLoss),
-                          },
-                        ]}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={70}
-                        outerRadius={100}
-                        paddingAngle={4}
-                        dataKey="value"
-                        label={({ name, percent }) =>
-                          `${name} ${((percent || 0) * 100).toFixed(0)}%`
-                        }
-                      >
-                        <Cell fill="#6366f1" />
-                        <Cell fill={gainLoss >= 0 ? "#10b981" : "#f43f5e"} />
-                      </Pie>
+                    <LineChart data={stockComparisonData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-white/5" />
+                      <XAxis dataKey="security" stroke="#888888" fontSize={10} tickLine={false} axisLine={false} />
+                      <YAxis
+                        stroke="#888888"
+                        fontSize={10}
+                        tickLine={false}
+                        axisLine={false}
+                        tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
+                      />
                       <Tooltip itemStyle={{ color: '#fff' }} labelStyle={{ color: '#aaa' }}
                         contentStyle={{
                           backgroundColor: "hsl(var(--card))",
@@ -584,11 +589,13 @@ export function StocksDashboard() {
                         formatter={(val: any) => val?.toLocaleString()}
                       />
                       <Legend />
-                    </PieChart>
+                      <Line type="monotone" dataKey="Previous Month" stroke="#94a3b8" strokeWidth={2} dot={{ r: 3 }} />
+                      <Line type="monotone" dataKey="This Month" stroke="#6366f1" strokeWidth={2} dot={{ r: 3 }} />
+                    </LineChart>
                   </ResponsiveContainer>
                 ) : (
                   <div className="flex h-full items-center justify-center text-muted-foreground italic text-sm">
-                    No snapshot for {selectedMonth}
+                    {currentSnap ? "No comparison data available" : `No snapshot for ${selectedMonth}`}
                   </div>
                 )}
               </CardContent>
@@ -1498,6 +1505,96 @@ export function StocksDashboard() {
                   No dividends recorded yet
                 </div>
               )}
+            </CardContent>
+          </Card>
+
+          {/* All-Time Snapshot Ledger */}
+          <Card>
+            <CardHeader>
+              <CardTitle>All-Time Snapshot Ledger</CardTitle>
+              <CardDescription>Complete history of all month-end snapshots</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Month</TableHead>
+                    <TableHead>FY</TableHead>
+                    <TableHead className="text-right">Portfolio Value</TableHead>
+                    <TableHead className="text-right">Total Cost</TableHead>
+                    <TableHead className="text-right">Unrealized G/L</TableHead>
+                    <TableHead className="text-right">G/L %</TableHead>
+                    <TableHead className="text-right">Money Out</TableHead>
+                    <TableHead className="text-center">Holdings</TableHead>
+                    <TableHead className="w-[50px]" />
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {snapshots.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={9} className="text-center py-10 text-muted-foreground italic">
+                        No snapshots recorded
+                      </TableCell>
+                    </TableRow>
+                  )}
+                  {[...snapshots]
+                    .sort((a, b) => {
+                      const aStart = parseInt(a.financialYear.split("/")[0], 10);
+                      const bStart = parseInt(b.financialYear.split("/")[0], 10);
+                      if (aStart !== bStart) return aStart - bStart;
+                      return FINANCIAL_YEAR_MONTHS.indexOf(a.month as any) - FINANCIAL_YEAR_MONTHS.indexOf(b.month as any);
+                    })
+                    .map((snap) => {
+                      const gl = snap.portfolioValue - snap.totalCost;
+                      const glPct =
+                        snap.totalCost > 0 ? (gl / snap.totalCost) * 100 : 0;
+                      return (
+                        <TableRow key={snap.id} className="group transition-colors">
+                          <TableCell className="font-semibold text-primary/80">{snap.month}</TableCell>
+                          <TableCell className="text-muted-foreground text-sm">{snap.financialYear}</TableCell>
+                          <TableCell className="text-right font-mono font-bold">
+                            {fmt(snap.portfolioValue)}
+                          </TableCell>
+                          <TableCell className="text-right font-mono">
+                            {fmt(snap.totalCost)}
+                          </TableCell>
+                          <TableCell
+                            className={`text-right font-mono font-bold ${
+                              gl >= 0 ? "text-emerald-400" : "text-red-400"
+                            }`}
+                          >
+                            {fmt(gl)}
+                          </TableCell>
+                          <TableCell
+                            className={`text-right font-mono ${
+                              glPct >= 0 ? "text-emerald-400" : "text-red-400"
+                            }`}
+                          >
+                            {fmtPct(glPct)}
+                          </TableCell>
+                          <TableCell className="text-right font-mono">
+                            {fmt(snap.moneyOut)}
+                          </TableCell>
+                          <TableCell className="text-center text-xs text-muted-foreground">
+                            {snap.holdings.length > 0
+                              ? `${snap.holdings.length} securities`
+                              : "Manual"}
+                          </TableCell>
+                          <TableCell>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-muted-foreground hover:text-destructive transition-colors"
+                              onClick={() => deleteSnapshot(snap.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                </TableBody>
+              </Table>
             </CardContent>
           </Card>
         </div>
