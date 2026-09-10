@@ -110,21 +110,9 @@ export function RealizedGainsDashboard() {
   const mappedDivGains = useMemo(() => {
     return dividendGains.map(gain => {
       const yieldPct = gain.totalAmount > 0 ? (gain.dividendAmount / gain.totalAmount) * 100 : 0;
-      
-      const rDate = new Date(gain.dividendReceivedDate);
-      const bDate = new Date(`${rDate.getFullYear()}-01-01`);
-      
-      const rawDays = (rDate.getTime() - bDate.getTime()) / (1000 * 60 * 60 * 24);
-      const daysHeld = Math.max(1, rawDays);
-      const yearsHeld = daysHeld / 365.25;
-      
-      const annualYieldPct = yearsHeld > 0 ? yieldPct / yearsHeld : 0;
-
       return {
         ...gain,
         yieldPct,
-        annualYieldPct,
-        daysHeld,
       };
     });
   }, [dividendGains]);
@@ -155,9 +143,18 @@ export function RealizedGainsDashboard() {
       group.totalDividend = group.gains.reduce((sum, g) => sum + g.dividendAmount, 0);
       group.aggregatedYield = group.latestInvested > 0 ? (group.totalDividend / group.latestInvested) * 100 : 0;
       
-      let totalDollarYears = 0;
+      const yearMap: Record<number, { maxInvested: number }> = {};
       group.gains.forEach(g => {
-        totalDollarYears += g.totalAmount * (g.daysHeld / 365.25);
+        const year = new Date(g.dividendReceivedDate).getFullYear();
+        if (!yearMap[year]) {
+          yearMap[year] = { maxInvested: 0 };
+        }
+        yearMap[year].maxInvested = Math.max(yearMap[year].maxInvested, g.totalAmount);
+      });
+
+      let totalDollarYears = 0;
+      Object.values(yearMap).forEach(y => {
+        totalDollarYears += y.maxInvested;
       });
       group.aggregatedAnnualYield = totalDollarYears > 0 ? (group.totalDividend / totalDollarYears) * 100 : 0;
     });
@@ -201,20 +198,28 @@ export function RealizedGainsDashboard() {
     let totalDollarYears = 0;
 
     const stockMaxInvested: Record<string, number> = {};
+    const stockYearMap: Record<string, Record<number, { maxInvested: number }>> = {};
 
     mappedDivGains.forEach(g => {
       totalDividend += g.dividendAmount;
-      totalDollarYears += g.totalAmount * (g.daysHeld / 365.25);
       
       const stock = g.stock.toUpperCase();
-      if (!stockMaxInvested[stock]) {
-        stockMaxInvested[stock] = g.totalAmount;
-      } else {
-        stockMaxInvested[stock] = Math.max(stockMaxInvested[stock], g.totalAmount);
-      }
+      if (!stockMaxInvested[stock]) stockMaxInvested[stock] = 0;
+      stockMaxInvested[stock] = Math.max(stockMaxInvested[stock], g.totalAmount);
+      
+      const year = new Date(g.dividendReceivedDate).getFullYear();
+      if (!stockYearMap[stock]) stockYearMap[stock] = {};
+      if (!stockYearMap[stock][year]) stockYearMap[stock][year] = { maxInvested: 0 };
+      stockYearMap[stock][year].maxInvested = Math.max(stockYearMap[stock][year].maxInvested, g.totalAmount);
     });
 
     totalInvested = Object.values(stockMaxInvested).reduce((sum, val) => sum + val, 0);
+    
+    Object.values(stockYearMap).forEach(years => {
+      Object.values(years).forEach(y => {
+        totalDollarYears += y.maxInvested;
+      });
+    });
 
     const avgYieldPct = totalInvested > 0 ? (totalDividend / totalInvested) * 100 : 0;
     const avgAnnualYieldPct = totalDollarYears > 0 ? (totalDividend / totalDollarYears) * 100 : 0;
@@ -427,7 +432,7 @@ export function RealizedGainsDashboard() {
                           <TableCell className="text-right font-mono text-white">{fmt(group.gains[0].totalAmount)}</TableCell>
                           <TableCell className="text-right font-mono font-black text-indigo-400">{fmt(group.gains[0].dividendAmount)}</TableCell>
                           <TableCell className={`text-right font-mono ${getPctColorClass(group.gains[0].yieldPct)}`}>{fmtPct(group.gains[0].yieldPct)}</TableCell>
-                          <TableCell className={`text-right font-mono ${getPctColorClass(group.gains[0].annualYieldPct)}`}>{fmtPct(group.gains[0].annualYieldPct)}</TableCell>
+                          <TableCell className={`text-right font-mono ${getPctColorClass(group.aggregatedAnnualYield)}`}>{fmtPct(group.aggregatedAnnualYield)}</TableCell>
                           <TableCell>
                             <Button
                               variant="ghost"
@@ -466,7 +471,7 @@ export function RealizedGainsDashboard() {
                               <TableCell className="text-right font-mono text-muted-foreground">{fmt(g.totalAmount)}</TableCell>
                               <TableCell className="text-right font-mono">{fmt(g.dividendAmount)}</TableCell>
                               <TableCell className={`text-right font-mono ${getPctColorClass(g.yieldPct, true)}`}>{fmtPct(g.yieldPct)}</TableCell>
-                              <TableCell className={`text-right font-mono ${getPctColorClass(g.annualYieldPct, true)}`}>{fmtPct(g.annualYieldPct)}</TableCell>
+                              <TableCell></TableCell>
                               <TableCell>
                                 <Button
                                   variant="ghost"

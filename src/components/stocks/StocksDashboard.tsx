@@ -575,7 +575,7 @@ export function StocksDashboard() {
                         <Cell fill="#6366f1" />
                         <Cell fill={gainLoss >= 0 ? "#10b981" : "#f43f5e"} />
                       </Pie>
-                      <Tooltip
+                      <Tooltip itemStyle={{ color: '#fff' }} labelStyle={{ color: '#aaa' }}
                         contentStyle={{
                           backgroundColor: "hsl(var(--card))",
                           borderColor: "hsl(var(--border))",
@@ -625,7 +625,7 @@ export function StocksDashboard() {
                           <Cell key={i} fill={SECURITY_COLORS[i % SECURITY_COLORS.length]} />
                         ))}
                       </Pie>
-                      <Tooltip
+                      <Tooltip itemStyle={{ color: '#fff' }} labelStyle={{ color: '#aaa' }}
                         contentStyle={{
                           backgroundColor: "hsl(var(--card))",
                           borderColor: "hsl(var(--border))",
@@ -878,7 +878,7 @@ export function StocksDashboard() {
                     axisLine={false}
                     tickFormatter={(v) => `${(v / 1_000_000).toFixed(1)}M`}
                   />
-                  <Tooltip
+                  <Tooltip itemStyle={{ color: '#fff' }} labelStyle={{ color: '#aaa' }}
                     cursor={{ fill: "rgba(255,255,255,0.04)" }}
                     contentStyle={{
                       backgroundColor: "hsl(var(--card))",
@@ -924,7 +924,7 @@ export function StocksDashboard() {
                     <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-white/5" />
                     <XAxis dataKey="month" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
                     <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
-                    <Tooltip 
+                    <Tooltip itemStyle={{ color: '#fff' }} labelStyle={{ color: '#aaa' }} 
                       cursor={{ fill: "rgba(255,255,255,0.04)" }} 
                       contentStyle={{ backgroundColor: "hsl(var(--card))", borderColor: "hsl(var(--border))", borderRadius: "12px" }} 
                       formatter={(val: any, name: any, props: any) => {
@@ -953,7 +953,7 @@ export function StocksDashboard() {
                     <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-white/5" />
                     <XAxis dataKey="month" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
                     <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
-                    <Tooltip 
+                    <Tooltip itemStyle={{ color: '#fff' }} labelStyle={{ color: '#aaa' }} 
                       cursor={{ fill: "rgba(255,255,255,0.04)" }} 
                       contentStyle={{ backgroundColor: "hsl(var(--card))", borderColor: "hsl(var(--border))", borderRadius: "12px" }} 
                       formatter={(val: any, name: any, props: any) => {
@@ -991,7 +991,7 @@ export function StocksDashboard() {
                       axisLine={false}
                       tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
                     />
-                    <Tooltip
+                    <Tooltip itemStyle={{ color: '#fff' }} labelStyle={{ color: '#aaa' }}
                       cursor={{ fill: "rgba(255,255,255,0.04)" }}
                       contentStyle={{
                         backgroundColor: "hsl(var(--card))",
@@ -1036,7 +1036,7 @@ export function StocksDashboard() {
                           <Cell key={i} fill={SECURITY_COLORS[i % SECURITY_COLORS.length]} />
                         ))}
                       </Pie>
-                      <Tooltip
+                      <Tooltip itemStyle={{ color: '#fff' }} labelStyle={{ color: '#aaa' }}
                         contentStyle={{
                           backgroundColor: "hsl(var(--card))",
                           borderColor: "hsl(var(--border))",
@@ -1313,7 +1313,7 @@ export function StocksDashboard() {
                     axisLine={false}
                     tickFormatter={(v) => `${(v / 1_000_000).toFixed(1)}M`}
                   />
-                  <Tooltip
+                  <Tooltip itemStyle={{ color: '#fff' }} labelStyle={{ color: '#aaa' }}
                     contentStyle={{ backgroundColor: "hsl(var(--card))", borderColor: "hsl(var(--border))", borderRadius: "12px" }}
                     formatter={(val: any) => val?.toLocaleString()}
                   />
@@ -1337,7 +1337,7 @@ export function StocksDashboard() {
                     <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-white/5" />
                     <XAxis dataKey="label" stroke="#888888" fontSize={10} tickLine={false} axisLine={false} />
                     <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
-                    <Tooltip 
+                    <Tooltip itemStyle={{ color: '#fff' }} labelStyle={{ color: '#aaa' }} 
                       contentStyle={{ backgroundColor: "hsl(var(--card))", borderColor: "hsl(var(--border))", borderRadius: "12px" }} 
                       formatter={(val: any, name: any, props: any) => {
                         const pct = props.payload["Gain/Loss %"];
@@ -1365,7 +1365,7 @@ export function StocksDashboard() {
                     <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-white/5" />
                     <XAxis dataKey="label" stroke="#888888" fontSize={10} tickLine={false} axisLine={false} />
                     <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
-                    <Tooltip 
+                    <Tooltip itemStyle={{ color: '#fff' }} labelStyle={{ color: '#aaa' }} 
                       contentStyle={{ backgroundColor: "hsl(var(--card))", borderColor: "hsl(var(--border))", borderRadius: "12px" }} 
                       formatter={(val: any, name: any, props: any) => {
                         const pct = props.payload["Net Gain/Loss %"];
@@ -1395,7 +1395,7 @@ export function StocksDashboard() {
                     <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-white/5" />
                     <XAxis dataKey="label" stroke="#888888" fontSize={10} tickLine={false} axisLine={false} />
                     <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(v) => `${v?.toFixed(1)}%`} />
-                    <Tooltip contentStyle={{ backgroundColor: "hsl(var(--card))", borderColor: "hsl(var(--border))", borderRadius: "12px" }} formatter={(val: any) => val?.toFixed(2) + '%'} />
+                    <Tooltip itemStyle={{ color: '#fff' }} labelStyle={{ color: '#aaa' }} contentStyle={{ backgroundColor: "hsl(var(--card))", borderColor: "hsl(var(--border))", borderRadius: "12px" }} formatter={(val: any) => val?.toFixed(2) + '%'} />
                     <ReferenceLine y={0} stroke="#ffffff" strokeOpacity={0.1} strokeDasharray="3 3" />
                     <Line type="monotone" dataKey="Net Gain/Loss %" stroke="#10b981" strokeWidth={3} dot={{ r: 4, fill: '#10b981' }} activeDot={{ r: 8 }} />
                   </LineChart>
@@ -1414,7 +1414,7 @@ export function StocksDashboard() {
                     <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-white/5" />
                     <XAxis dataKey="label" stroke="#888888" fontSize={10} tickLine={false} axisLine={false} />
                     <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
-                    <Tooltip contentStyle={{ backgroundColor: "hsl(var(--card))", borderColor: "hsl(var(--border))", borderRadius: "12px" }} formatter={(val: any) => val?.toLocaleString()} />
+                    <Tooltip itemStyle={{ color: '#fff' }} labelStyle={{ color: '#aaa' }} contentStyle={{ backgroundColor: "hsl(var(--card))", borderColor: "hsl(var(--border))", borderRadius: "12px" }} formatter={(val: any) => val?.toLocaleString()} />
                     <Bar dataKey="Dividends" fill="#10b981" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
@@ -1450,7 +1450,7 @@ export function StocksDashboard() {
                             <Cell key={i} fill={SECURITY_COLORS[i % SECURITY_COLORS.length]} />
                           ))}
                         </Pie>
-                        <Tooltip contentStyle={{ backgroundColor: "hsl(var(--card))", borderColor: "hsl(var(--border))", borderRadius: "12px" }} formatter={(val: any) => val?.toLocaleString()} />
+                        <Tooltip itemStyle={{ color: '#fff' }} labelStyle={{ color: '#aaa' }} contentStyle={{ backgroundColor: "hsl(var(--card))", borderColor: "hsl(var(--border))", borderRadius: "12px" }} formatter={(val: any) => val?.toLocaleString()} />
                         <Legend />
                       </PieChart>
                     </ResponsiveContainer>
