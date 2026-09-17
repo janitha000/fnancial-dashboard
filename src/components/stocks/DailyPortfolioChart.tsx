@@ -79,30 +79,58 @@ export function DailyPortfolioChart({
     return [...dailyPoints].sort((a, b) => a.date.localeCompare(b.date));
   }, [dailyPoints]);
 
+  // Chronologically sorted snapshots mapped to calendar YYYY-MM
+  const chronoSortedSnapshots = useMemo(() => {
+    return [...snapshots]
+      .map((s) => ({
+        ...s,
+        yearMonth: getCalendarYearMonth(s.financialYear, s.month),
+      }))
+      .sort((a, b) => a.yearMonth.localeCompare(b.yearMonth));
+  }, [snapshots]);
+
   // Compute calculated timeline
   const fullTimeline = useMemo(() => {
     if (sortedPoints.length === 0) return [];
 
-    let runningCost = 0;
-    let txIdx = 0;
     const sortedTxs = [...capitalTransactions].sort((a, b) => a.date.localeCompare(b.date));
 
-    // Fallback: if no capital transactions exist, use the first snapshot totalCost
-    let baseFallbackCost = 0;
-    if (sortedTxs.length === 0 && snapshots.length > 0) {
-      baseFallbackCost = snapshots[0].totalCost || 0;
-      runningCost = baseFallbackCost;
-    }
-
     return sortedPoints.map((pt, idx) => {
-      while (txIdx < sortedTxs.length && sortedTxs[txIdx].date <= pt.date) {
-        const tx = sortedTxs[txIdx];
-        if (tx.type === "BUY") {
-          runningCost += tx.amount;
-        } else if (tx.type === "SELL") {
-          runningCost = Math.max(0, runningCost - tx.amount);
+      const ptMonth = pt.date.slice(0, 7); // "YYYY-MM"
+
+      // 1. Initial cost is the total cost of the previous month's snapshot
+      const prevSnapshots = chronoSortedSnapshots.filter((s) => s.yearMonth < ptMonth);
+      const prevSnapshot = prevSnapshots.length > 0 ? prevSnapshots[prevSnapshots.length - 1] : null;
+
+      let costBasis = 0;
+
+      if (prevSnapshot) {
+        const baseCost = prevSnapshot.totalCost || 0;
+        // Transactions that occurred after the previous month's end up to pt.date
+        const sinceDate = `${prevSnapshot.yearMonth}-31`;
+        const subsequentTxs = sortedTxs.filter((tx) => tx.date > sinceDate && tx.date <= pt.date);
+        const netAdjustment = subsequentTxs.reduce((sum, tx) => {
+          return sum + (tx.type === "BUY" ? tx.amount : -tx.amount);
+        }, 0);
+        costBasis = Math.max(0, baseCost + netAdjustment);
+      } else {
+        // Fallback if no prior month snapshot exists:
+        const currentMonthSnap = chronoSortedSnapshots.find((s) => s.yearMonth === ptMonth);
+        if (currentMonthSnap) {
+          const baseCost = currentMonthSnap.totalCost || 0;
+          const intraMonthTxs = sortedTxs.filter((tx) => tx.date.startsWith(ptMonth) && tx.date <= pt.date);
+          const netAdjustment = intraMonthTxs.reduce((sum, tx) => {
+            return sum + (tx.type === "BUY" ? tx.amount : -tx.amount);
+          }, 0);
+          costBasis = Math.max(0, baseCost + netAdjustment);
+        } else {
+          // If no snapshots at all, compute running cost from all capital transactions up to date
+          const txsUpToDate = sortedTxs.filter((tx) => tx.date <= pt.date);
+          costBasis = Math.max(
+            0,
+            txsUpToDate.reduce((sum, tx) => sum + (tx.type === "BUY" ? tx.amount : -tx.amount), 0)
+          );
         }
-        txIdx++;
       }
 
       const sameDayTxs = sortedTxs.filter((tx) => tx.date === pt.date);
@@ -111,7 +139,6 @@ export function DailyPortfolioChart({
       }, 0);
 
       const marketValue = pt.portfolio_value;
-      const costBasis = runningCost;
       const gainLossValue = marketValue - costBasis;
       const gainLossPercent = costBasis > 0 ? (gainLossValue / costBasis) * 100 : 0;
 
@@ -133,7 +160,7 @@ export function DailyPortfolioChart({
         dailyPercentChange,
       };
     });
-  }, [sortedPoints, capitalTransactions, snapshots]);
+  }, [sortedPoints, capitalTransactions, chronoSortedSnapshots]);
 
   // Filter for active view
   const filteredTimeline = useMemo(() => {
