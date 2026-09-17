@@ -75,12 +75,28 @@ export type StockDividendGain = {
   totalAmount: number;
 };
 
+export type StockDailyPoint = {
+  date: string; // "YYYY-MM-DD"
+  portfolio_value: number;
+};
+
+export type StockCapitalTransaction = {
+  id: string;
+  date: string; // "YYYY-MM-DD"
+  type: "BUY" | "SELL";
+  amount: number;
+  notes?: string;
+};
+
 export type StocksDBState = {
   snapshots: StockSnapshot[];
   dividends: StockDividend[];
   transactions?: StockTransaction[];
   realizedGains?: StockRealizedGain[];
   dividendGains?: StockDividendGain[];
+  dailyPoints?: StockDailyPoint[];
+  monthlyDailyInputs?: Record<string, string>;
+  capitalTransactions?: StockCapitalTransaction[];
 };
 
 // ─── KV Persistence ──────────────────────────────────────────────────────────
@@ -92,14 +108,26 @@ export async function getStockData(): Promise<StocksDBState> {
     const data = await kv.get<StocksDBState | StockSnapshot[]>(DB_KEY);
     if (!data) return { snapshots: [], dividends: [] };
     if (Array.isArray(data)) {
-      return { snapshots: data, dividends: [], transactions: [], realizedGains: [], dividendGains: [] };
+      return {
+        snapshots: data,
+        dividends: [],
+        transactions: [],
+        realizedGains: [],
+        dividendGains: [],
+        dailyPoints: [],
+        monthlyDailyInputs: {},
+        capitalTransactions: [],
+      };
     }
     return { 
       snapshots: data.snapshots || [], 
       dividends: data.dividends || [],
       transactions: data.transactions || [],
       realizedGains: data.realizedGains || [],
-      dividendGains: data.dividendGains || []
+      dividendGains: data.dividendGains || [],
+      dailyPoints: data.dailyPoints || [],
+      monthlyDailyInputs: data.monthlyDailyInputs || {},
+      capitalTransactions: data.capitalTransactions || [],
     };
   } catch (error) {
     console.error("Failed to fetch stock data from KV", error);

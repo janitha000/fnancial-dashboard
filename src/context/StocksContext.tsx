@@ -15,6 +15,8 @@ import {
   type StockTransaction,
   type StockRealizedGain,
   type StockDividendGain,
+  type StockDailyPoint,
+  type StockCapitalTransaction,
 } from "@/actions/stocks";
 
 interface StocksContextType {
@@ -23,6 +25,9 @@ interface StocksContextType {
   transactions: StockTransaction[];
   realizedGains: StockRealizedGain[];
   dividendGains: StockDividendGain[];
+  dailyPoints: StockDailyPoint[];
+  monthlyDailyInputs: Record<string, string>;
+  capitalTransactions: StockCapitalTransaction[];
   isLoaded: boolean;
   upsertSnapshot: (snapshot: Omit<StockSnapshot, "id">) => Promise<void>;
   deleteSnapshot: (id: string) => Promise<void>;
@@ -34,6 +39,9 @@ interface StocksContextType {
   deleteRealizedGain: (id: string) => Promise<void>;
   addDividendGain: (gain: Omit<StockDividendGain, "id">) => Promise<void>;
   deleteDividendGain: (id: string) => Promise<void>;
+  saveDailyPoints: (points: StockDailyPoint[], monthKey?: string, rawJson?: string) => Promise<void>;
+  addCapitalTransaction: (tx: Omit<StockCapitalTransaction, "id">) => Promise<void>;
+  deleteCapitalTransaction: (id: string) => Promise<void>;
 }
 
 const StocksContext = createContext<StocksContextType | undefined>(undefined);
@@ -44,6 +52,9 @@ export function StocksProvider({ children }: { children: ReactNode }) {
   const [transactions, setTransactions] = useState<StockTransaction[]>([]);
   const [realizedGains, setRealizedGains] = useState<StockRealizedGain[]>([]);
   const [dividendGains, setDividendGains] = useState<StockDividendGain[]>([]);
+  const [dailyPoints, setDailyPoints] = useState<StockDailyPoint[]>([]);
+  const [monthlyDailyInputs, setMonthlyDailyInputs] = useState<Record<string, string>>({});
+  const [capitalTransactions, setCapitalTransactions] = useState<StockCapitalTransaction[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
@@ -55,6 +66,9 @@ export function StocksProvider({ children }: { children: ReactNode }) {
         setTransactions(data.transactions || []);
         setRealizedGains(data.realizedGains || []);
         setDividendGains(data.dividendGains || []);
+        setDailyPoints(data.dailyPoints || []);
+        setMonthlyDailyInputs(data.monthlyDailyInputs || {});
+        setCapitalTransactions(data.capitalTransactions || []);
       } catch (e) {
         console.error("Failed to load stock data", e);
       } finally {
@@ -64,8 +78,26 @@ export function StocksProvider({ children }: { children: ReactNode }) {
     load();
   }, []);
 
-  const persist = async (records: StockSnapshot[], divs: StockDividend[] = dividends, trans: StockTransaction[] = transactions, gains: StockRealizedGain[] = realizedGains, dGains: StockDividendGain[] = dividendGains) => {
-    await saveStockData({ snapshots: records, dividends: divs, transactions: trans, realizedGains: gains, dividendGains: dGains });
+  const persist = async (
+    records: StockSnapshot[] = snapshots,
+    divs: StockDividend[] = dividends,
+    trans: StockTransaction[] = transactions,
+    gains: StockRealizedGain[] = realizedGains,
+    dGains: StockDividendGain[] = dividendGains,
+    dPoints: StockDailyPoint[] = dailyPoints,
+    mInputs: Record<string, string> = monthlyDailyInputs,
+    cTrans: StockCapitalTransaction[] = capitalTransactions
+  ) => {
+    await saveStockData({
+      snapshots: records,
+      dividends: divs,
+      transactions: trans,
+      realizedGains: gains,
+      dividendGains: dGains,
+      dailyPoints: dPoints,
+      monthlyDailyInputs: mInputs,
+      capitalTransactions: cTrans,
+    });
   };
 
   const upsertSnapshot = async (snapshot: Omit<StockSnapshot, "id">) => {
@@ -82,65 +114,97 @@ export function StocksProvider({ children }: { children: ReactNode }) {
       updated = [...snapshots, newSnap];
     }
     setSnapshots(updated);
-    await persist(updated, dividends, transactions, realizedGains);
+    await persist(updated, dividends, transactions, realizedGains, dividendGains, dailyPoints, monthlyDailyInputs, capitalTransactions);
   };
 
   const deleteSnapshot = async (id: string) => {
     const updated = snapshots.filter((s) => s.id !== id);
     setSnapshots(updated);
-    await persist(updated, dividends, transactions, realizedGains);
+    await persist(updated, dividends, transactions, realizedGains, dividendGains, dailyPoints, monthlyDailyInputs, capitalTransactions);
   };
 
   const addDividend = async (dividend: Omit<StockDividend, "id">) => {
     const newDiv: StockDividend = { ...dividend, id: crypto.randomUUID() };
     const updated = [...dividends, newDiv];
     setDividends(updated);
-    await persist(snapshots, updated, transactions, realizedGains);
+    await persist(snapshots, updated, transactions, realizedGains, dividendGains, dailyPoints, monthlyDailyInputs, capitalTransactions);
   };
 
   const deleteDividend = async (id: string) => {
     const updated = dividends.filter((d) => d.id !== id);
     setDividends(updated);
-    await persist(snapshots, updated, transactions, realizedGains);
+    await persist(snapshots, updated, transactions, realizedGains, dividendGains, dailyPoints, monthlyDailyInputs, capitalTransactions);
   };
 
   const addTransaction = async (transaction: Omit<StockTransaction, "id">) => {
     const newTrans: StockTransaction = { ...transaction, id: crypto.randomUUID() };
     const updated = [...transactions, newTrans];
     setTransactions(updated);
-    await persist(snapshots, dividends, updated, realizedGains);
+    await persist(snapshots, dividends, updated, realizedGains, dividendGains, dailyPoints, monthlyDailyInputs, capitalTransactions);
   };
 
   const deleteTransaction = async (id: string) => {
     const updated = transactions.filter((t) => t.id !== id);
     setTransactions(updated);
-    await persist(snapshots, dividends, updated, realizedGains);
+    await persist(snapshots, dividends, updated, realizedGains, dividendGains, dailyPoints, monthlyDailyInputs, capitalTransactions);
   };
 
   const addRealizedGain = async (gain: Omit<StockRealizedGain, "id">) => {
     const newGain: StockRealizedGain = { ...gain, id: crypto.randomUUID() };
     const updated = [...realizedGains, newGain];
     setRealizedGains(updated);
-    await persist(snapshots, dividends, transactions, updated);
+    await persist(snapshots, dividends, transactions, updated, dividendGains, dailyPoints, monthlyDailyInputs, capitalTransactions);
   };
 
   const deleteRealizedGain = async (id: string) => {
     const updated = realizedGains.filter((g) => g.id !== id);
     setRealizedGains(updated);
-    await persist(snapshots, dividends, transactions, updated, dividendGains);
+    await persist(snapshots, dividends, transactions, updated, dividendGains, dailyPoints, monthlyDailyInputs, capitalTransactions);
   };
 
   const addDividendGain = async (gain: Omit<StockDividendGain, "id">) => {
     const newGain: StockDividendGain = { ...gain, id: crypto.randomUUID() };
     const updated = [...dividendGains, newGain];
     setDividendGains(updated);
-    await persist(snapshots, dividends, transactions, realizedGains, updated);
+    await persist(snapshots, dividends, transactions, realizedGains, updated, dailyPoints, monthlyDailyInputs, capitalTransactions);
   };
 
   const deleteDividendGain = async (id: string) => {
     const updated = dividendGains.filter((g) => g.id !== id);
     setDividendGains(updated);
-    await persist(snapshots, dividends, transactions, realizedGains, updated);
+    await persist(snapshots, dividends, transactions, realizedGains, updated, dailyPoints, monthlyDailyInputs, capitalTransactions);
+  };
+
+  const saveDailyPoints = async (newPoints: StockDailyPoint[], monthKey?: string, rawJson?: string) => {
+    const map = new Map<string, number>();
+    dailyPoints.forEach((p) => map.set(p.date, p.portfolio_value));
+    newPoints.forEach((p) => map.set(p.date, p.portfolio_value));
+
+    const updatedPoints: StockDailyPoint[] = Array.from(map.entries())
+      .map(([date, portfolio_value]) => ({ date, portfolio_value }))
+      .sort((a, b) => a.date.localeCompare(b.date));
+
+    const updatedInputs = { ...monthlyDailyInputs };
+    if (monthKey && rawJson !== undefined) {
+      updatedInputs[monthKey] = rawJson;
+    }
+
+    setDailyPoints(updatedPoints);
+    setMonthlyDailyInputs(updatedInputs);
+    await persist(snapshots, dividends, transactions, realizedGains, dividendGains, updatedPoints, updatedInputs, capitalTransactions);
+  };
+
+  const addCapitalTransaction = async (tx: Omit<StockCapitalTransaction, "id">) => {
+    const newTx: StockCapitalTransaction = { ...tx, id: crypto.randomUUID() };
+    const updated = [...capitalTransactions, newTx].sort((a, b) => a.date.localeCompare(b.date));
+    setCapitalTransactions(updated);
+    await persist(snapshots, dividends, transactions, realizedGains, dividendGains, dailyPoints, monthlyDailyInputs, updated);
+  };
+
+  const deleteCapitalTransaction = async (id: string) => {
+    const updated = capitalTransactions.filter((t) => t.id !== id);
+    setCapitalTransactions(updated);
+    await persist(snapshots, dividends, transactions, realizedGains, dividendGains, dailyPoints, monthlyDailyInputs, updated);
   };
 
   return (
@@ -151,6 +215,9 @@ export function StocksProvider({ children }: { children: ReactNode }) {
         transactions,
         realizedGains,
         dividendGains,
+        dailyPoints,
+        monthlyDailyInputs,
+        capitalTransactions,
         isLoaded,
         upsertSnapshot,
         deleteSnapshot,
@@ -162,6 +229,9 @@ export function StocksProvider({ children }: { children: ReactNode }) {
         deleteRealizedGain,
         addDividendGain,
         deleteDividendGain,
+        saveDailyPoints,
+        addCapitalTransaction,
+        deleteCapitalTransaction,
       }}
     >
       {children}

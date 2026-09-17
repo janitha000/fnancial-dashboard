@@ -53,6 +53,9 @@ import {
 import { AddStockModal } from "./AddStockModal";
 import { StockwiseDashboard } from "./StockwiseDashboard";
 import { RealizedGainsDashboard } from "./RealizedGainsDashboard";
+import { DailyPortfolioChart } from "./DailyPortfolioChart";
+import { InputDailyJsonModal } from "./InputDailyJsonModal";
+import { CapitalTransactionsModal } from "./CapitalTransactionsModal";
 import {
   Trash2,
   TrendingUp,
@@ -167,7 +170,7 @@ export function StocksDashboard() {
 
   const [selectedYear, setSelectedYear] = useState(currentFinancialYear());
   const [selectedMonth, setSelectedMonth] = useState<string>(currentFinancialMonth());
-  const [viewMode, setViewMode] = useState<"monthly" | "fy" | "full" | "stockwise" | "realized">("monthly");
+  const [viewMode, setViewMode] = useState<"monthly" | "fy" | "full" | "daily" | "stockwise" | "realized">("monthly");
 
   // ─── Month Navigation ──────────────────────────────────────────────────────
   const handlePrevMonth = () => {
@@ -542,6 +545,13 @@ export function StocksDashboard() {
               Full View
             </Button>
             <Button
+              variant={viewMode === "daily" ? "default" : "ghost"}
+              onClick={() => setViewMode("daily")}
+              className="h-8 rounded-lg"
+            >
+              Daily Performance
+            </Button>
+            <Button
               variant={viewMode === "stockwise" ? "default" : "ghost"}
               onClick={() => setViewMode("stockwise")}
               className="h-8 rounded-lg"
@@ -559,6 +569,8 @@ export function StocksDashboard() {
         </div>
 
         <div className="flex items-center gap-2">
+          <InputDailyJsonModal currentFY={selectedYear} currentMonth={selectedMonth} />
+          <CapitalTransactionsModal />
           {viewMode === "monthly" && currentSnap && (
             <div className="flex items-center gap-2">
               <AddStockModal 
@@ -585,6 +597,15 @@ export function StocksDashboard() {
           <AddStockModal />
         </div>
       </div>
+
+      {/* ═══════════════ DAILY PERFORMANCE STANDALONE VIEW ═══════════════ */}
+      {viewMode === "daily" && (
+        <DailyPortfolioChart
+          mode="full"
+          selectedFY={selectedYear}
+          selectedMonth={selectedMonth}
+        />
+      )}
 
       {/* ═══════════════ STOCKWISE VIEW ═══════════════ */}
       {viewMode === "stockwise" && (
@@ -1000,6 +1021,13 @@ export function StocksDashboard() {
               </CardContent>
             </Card>
           )}
+
+          {/* Daily Portfolio Performance for this Month */}
+          <DailyPortfolioChart
+            mode="monthly"
+            selectedFY={selectedYear}
+            selectedMonth={selectedMonth}
+          />
         </>
       )}
 
@@ -1479,6 +1507,13 @@ export function StocksDashboard() {
               </CardContent>
             </Card>
           )}
+
+          {/* Daily Portfolio Performance for this FY */}
+          <DailyPortfolioChart
+            mode="fy"
+            selectedFY={selectedYear}
+            selectedMonth={selectedMonth}
+          />
         </>
       )}
 
@@ -1789,8 +1824,15 @@ export function StocksDashboard() {
               </Table>
             </CardContent>
           </Card>
-        </div>
-      )}
-    </div>
-  );
-}
+
+            {/* Daily Portfolio Performance for All Time */}
+            <DailyPortfolioChart
+              mode="full"
+              selectedFY={selectedYear}
+              selectedMonth={selectedMonth}
+            />
+          </div>
+        )}
+      </div>
+    );
+  }
