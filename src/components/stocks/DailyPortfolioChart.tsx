@@ -38,6 +38,7 @@ import { useStocks } from "@/context/StocksContext";
 import { FINANCIAL_YEAR_MONTHS } from "@/context/TaxContext";
 import { InputDailyJsonModal } from "./InputDailyJsonModal";
 import { CapitalTransactionsModal } from "./CapitalTransactionsModal";
+import type { StockSnapshot } from "@/actions/stocks";
 
 interface DailyPortfolioChartProps {
   mode: "monthly" | "fy" | "full";
@@ -51,7 +52,9 @@ export function DailyPortfolioChart({
   selectedMonth = "Aug",
 }: DailyPortfolioChartProps) {
   const { dailyPoints, capitalTransactions, snapshots } = useStocks();
-  const [activeChart, setActiveChart] = useState<"gain_loss" | "value_cost" | "daily_change">("gain_loss");
+  const [activeChart, setActiveChart] = useState<
+    "gain_loss_rs" | "gain_loss_pct" | "gain_loss_combined" | "value_cost" | "daily_change"
+  >("gain_loss_rs");
   const [showTable, setShowTable] = useState(false);
 
   // Month number mapping from Financial Month name
@@ -89,6 +92,15 @@ export function DailyPortfolioChart({
       .sort((a, b) => a.yearMonth.localeCompare(b.yearMonth));
   }, [snapshots]);
 
+  // Helper to get total cost of holdings from a snapshot (matching Holdings Detail table TOTAL)
+  const getSnapshotHoldingsCost = (s: StockSnapshot): number => {
+    if (s.holdings && s.holdings.length > 0) {
+      const sumHoldings = s.holdings.reduce((sum, h) => sum + (h.totalCost || 0), 0);
+      if (sumHoldings > 0) return sumHoldings;
+    }
+    return s.totalCost || 0;
+  };
+
   // Compute calculated timeline
   const fullTimeline = useMemo(() => {
     if (sortedPoints.length === 0) return [];
@@ -98,14 +110,14 @@ export function DailyPortfolioChart({
     return sortedPoints.map((pt, idx) => {
       const ptMonth = pt.date.slice(0, 7); // "YYYY-MM"
 
-      // 1. Initial cost is the total cost of the previous month's snapshot
+      // 1. Initial cost is the total cost under Holdings Detail table of the previous month's snapshot
       const prevSnapshots = chronoSortedSnapshots.filter((s) => s.yearMonth < ptMonth);
       const prevSnapshot = prevSnapshots.length > 0 ? prevSnapshots[prevSnapshots.length - 1] : null;
 
       let costBasis = 0;
 
       if (prevSnapshot) {
-        const baseCost = prevSnapshot.totalCost || 0;
+        const baseCost = getSnapshotHoldingsCost(prevSnapshot);
         // Transactions that occurred after the previous month's end up to pt.date
         const sinceDate = `${prevSnapshot.yearMonth}-31`;
         const subsequentTxs = sortedTxs.filter((tx) => tx.date > sinceDate && tx.date <= pt.date);
@@ -117,7 +129,7 @@ export function DailyPortfolioChart({
         // Fallback if no prior month snapshot exists:
         const currentMonthSnap = chronoSortedSnapshots.find((s) => s.yearMonth === ptMonth);
         if (currentMonthSnap) {
-          const baseCost = currentMonthSnap.totalCost || 0;
+          const baseCost = getSnapshotHoldingsCost(currentMonthSnap);
           const intraMonthTxs = sortedTxs.filter((tx) => tx.date.startsWith(ptMonth) && tx.date <= pt.date);
           const netAdjustment = intraMonthTxs.reduce((sum, tx) => {
             return sum + (tx.type === "BUY" ? tx.amount : -tx.amount);
@@ -294,20 +306,36 @@ export function DailyPortfolioChart({
           <div className="flex flex-wrap items-center gap-2">
             <div className="flex bg-background/60 p-1 rounded-xl border border-white/10 text-xs">
               <Button
+                variant={activeChart === "gain_loss_rs" ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setActiveChart("gain_loss_rs")}
+                className="h-7 text-xs rounded-lg px-2.5"
+              >
+                G/L (Rs.)
+              </Button>
+              <Button
+                variant={activeChart === "gain_loss_pct" ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setActiveChart("gain_loss_pct")}
+                className="h-7 text-xs rounded-lg px-2.5"
+              >
+                G/L (%)
+              </Button>
+              <Button
+                variant={activeChart === "gain_loss_combined" ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setActiveChart("gain_loss_combined")}
+                className="h-7 text-xs rounded-lg px-2.5"
+              >
+                Dual (Rs. & %)
+              </Button>
+              <Button
                 variant={activeChart === "value_cost" ? "default" : "ghost"}
                 size="sm"
                 onClick={() => setActiveChart("value_cost")}
                 className="h-7 text-xs rounded-lg px-2.5"
               >
                 Value vs Cost
-              </Button>
-              <Button
-                variant={activeChart === "gain_loss" ? "default" : "ghost"}
-                size="sm"
-                onClick={() => setActiveChart("gain_loss")}
-                className="h-7 text-xs rounded-lg px-2.5"
-              >
-                Gain/Loss (Rs. & %)
               </Button>
               <Button
                 variant={activeChart === "daily_change" ? "default" : "ghost"}
@@ -443,6 +471,208 @@ export function DailyPortfolioChart({
 
             {/* Recharts Canvas */}
             <div className="h-[340px] w-full pt-2">
+              {/* 1. Dedicated Gain/Loss in Rupees (Rs.) */}
+              {activeChart === "gain_loss_rs" && (
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={filteredTimeline} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="glRsGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#10B981" stopOpacity={0.4} />
+                        <stop offset="95%" stopColor="#10B981" stopOpacity={0.0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.06)" />
+                    <XAxis
+                      dataKey="date"
+                      tickFormatter={(d) => {
+                        const p = d.split("-");
+                        return p.length === 3 ? `${p[2]}/${p[1]}` : d;
+                      }}
+                      stroke="#888"
+                      fontSize={11}
+                      tickLine={false}
+                      axisLine={false}
+                    />
+                    <YAxis
+                      stroke="#10B981"
+                      fontSize={11}
+                      tickLine={false}
+                      axisLine={false}
+                      tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
+                    />
+                    <ReferenceLine y={0} stroke="rgba(255,255,255,0.25)" strokeDasharray="3 3" label={{ value: "Rs. 0", fill: "#888", fontSize: 10 }} />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: "#0f172a",
+                        borderColor: "rgba(255,255,255,0.15)",
+                        borderRadius: "12px",
+                        color: "#ffffff",
+                      }}
+                      itemStyle={{ color: "#ffffff", fontSize: "12px" }}
+                      labelStyle={{ color: "#94a3b8", fontWeight: 600, marginBottom: "4px" }}
+                      labelFormatter={(label) => fmtDate(String(label))}
+                      formatter={(val: any) => [
+                        `${Number(val) >= 0 ? "+" : ""}Rs. ${fmtDec(Number(val))}`,
+                        "Gain / Loss (Rs.)",
+                      ]}
+                    />
+                    <Legend wrapperStyle={{ paddingTop: "10px", fontSize: "12px" }} />
+                    <Area
+                      type="monotone"
+                      dataKey="gainLossValue"
+                      name="Gain / Loss (Rupees)"
+                      stroke="#10B981"
+                      strokeWidth={2.5}
+                      fillOpacity={1}
+                      fill="url(#glRsGrad)"
+                      dot={false}
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              )}
+
+              {/* 2. Dedicated Gain/Loss in Percentage (%) */}
+              {activeChart === "gain_loss_pct" && (
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={filteredTimeline} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="glPctGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#38BDF8" stopOpacity={0.4} />
+                        <stop offset="95%" stopColor="#38BDF8" stopOpacity={0.0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.06)" />
+                    <XAxis
+                      dataKey="date"
+                      tickFormatter={(d) => {
+                        const p = d.split("-");
+                        return p.length === 3 ? `${p[2]}/${p[1]}` : d;
+                      }}
+                      stroke="#888"
+                      fontSize={11}
+                      tickLine={false}
+                      axisLine={false}
+                    />
+                    <YAxis
+                      stroke="#38BDF8"
+                      fontSize={11}
+                      tickLine={false}
+                      axisLine={false}
+                      tickFormatter={(v) => `${v.toFixed(1)}%`}
+                    />
+                    <ReferenceLine y={0} stroke="rgba(255,255,255,0.25)" strokeDasharray="3 3" label={{ value: "0%", fill: "#888", fontSize: 10 }} />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: "#0f172a",
+                        borderColor: "rgba(255,255,255,0.15)",
+                        borderRadius: "12px",
+                        color: "#ffffff",
+                      }}
+                      itemStyle={{ color: "#ffffff", fontSize: "12px" }}
+                      labelStyle={{ color: "#94a3b8", fontWeight: 600, marginBottom: "4px" }}
+                      labelFormatter={(label) => fmtDate(String(label))}
+                      formatter={(val: any) => [
+                        `${Number(val) >= 0 ? "+" : ""}${Number(val).toFixed(2)}%`,
+                        "Portfolio Return (%)",
+                      ]}
+                    />
+                    <Legend wrapperStyle={{ paddingTop: "10px", fontSize: "12px" }} />
+                    <Area
+                      type="monotone"
+                      dataKey="gainLossPercent"
+                      name="Gain / Loss (Percentage ROI)"
+                      stroke="#38BDF8"
+                      strokeWidth={2.5}
+                      fillOpacity={1}
+                      fill="url(#glPctGrad)"
+                      dot={false}
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              )}
+
+              {/* 3. Combined Dual-Axis (Rs. & %) */}
+              {activeChart === "gain_loss_combined" && (
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={filteredTimeline} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="glCombGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#10B981" stopOpacity={0.35} />
+                        <stop offset="95%" stopColor="#10B981" stopOpacity={0.0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.06)" />
+                    <XAxis
+                      dataKey="date"
+                      tickFormatter={(d) => {
+                        const p = d.split("-");
+                        return p.length === 3 ? `${p[2]}/${p[1]}` : d;
+                      }}
+                      stroke="#888"
+                      fontSize={11}
+                      tickLine={false}
+                      axisLine={false}
+                    />
+                    <YAxis
+                      yAxisId="left"
+                      stroke="#10B981"
+                      fontSize={11}
+                      tickLine={false}
+                      axisLine={false}
+                      tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
+                    />
+                    <YAxis
+                      yAxisId="right"
+                      orientation="right"
+                      stroke="#38BDF8"
+                      fontSize={11}
+                      tickLine={false}
+                      axisLine={false}
+                      tickFormatter={(v) => `${v.toFixed(1)}%`}
+                    />
+                    <ReferenceLine yAxisId="left" y={0} stroke="rgba(255,255,255,0.2)" strokeDasharray="3 3" />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: "#0f172a",
+                        borderColor: "rgba(255,255,255,0.15)",
+                        borderRadius: "12px",
+                        color: "#ffffff",
+                      }}
+                      itemStyle={{ color: "#ffffff", fontSize: "12px" }}
+                      labelStyle={{ color: "#94a3b8", fontWeight: 600, marginBottom: "4px" }}
+                      labelFormatter={(label) => fmtDate(String(label))}
+                      formatter={(val: any, name: any) => {
+                        if (name === "Gain / Loss (Rs.)") {
+                          return [`${Number(val) >= 0 ? "+" : ""}Rs. ${fmtDec(Number(val))}`, "Gain / Loss (Rs.)"];
+                        }
+                        return [`${Number(val) >= 0 ? "+" : ""}${Number(val).toFixed(2)}%`, "Gain / Loss (%)"];
+                      }}
+                    />
+                    <Legend wrapperStyle={{ paddingTop: "10px", fontSize: "12px" }} />
+                    <Area
+                      yAxisId="left"
+                      type="monotone"
+                      dataKey="gainLossValue"
+                      name="Gain / Loss (Rs.)"
+                      stroke="#10B981"
+                      strokeWidth={2.5}
+                      fillOpacity={1}
+                      fill="url(#glCombGrad)"
+                    />
+                    <Line
+                      yAxisId="right"
+                      type="monotone"
+                      dataKey="gainLossPercent"
+                      name="Gain / Loss (%)"
+                      stroke="#38BDF8"
+                      strokeWidth={2}
+                      dot={false}
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              )}
+
+              {/* 4. Value vs Cost */}
               {activeChart === "value_cost" && (
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={filteredTimeline} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
@@ -478,11 +708,13 @@ export function DailyPortfolioChart({
                     />
                     <Tooltip
                       contentStyle={{
-                        backgroundColor: "hsl(var(--card))",
+                        backgroundColor: "#0f172a",
                         borderColor: "rgba(255,255,255,0.15)",
                         borderRadius: "12px",
-                        color: "#fff",
+                        color: "#ffffff",
                       }}
+                      itemStyle={{ color: "#ffffff", fontSize: "12px" }}
+                      labelStyle={{ color: "#94a3b8", fontWeight: 600, marginBottom: "4px" }}
                       labelFormatter={(label) => fmtDate(String(label))}
                       formatter={(val: any, name: any) => [
                         `Rs. ${fmtDec(Number(val))}`,
@@ -513,84 +745,7 @@ export function DailyPortfolioChart({
                 </ResponsiveContainer>
               )}
 
-              {activeChart === "gain_loss" && (
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={filteredTimeline} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                    <defs>
-                      <linearGradient id="glGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#10B981" stopOpacity={0.4} />
-                        <stop offset="95%" stopColor="#10B981" stopOpacity={0.0} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.06)" />
-                    <XAxis
-                      dataKey="date"
-                      tickFormatter={(d) => {
-                        const p = d.split("-");
-                        return p.length === 3 ? `${p[2]}/${p[1]}` : d;
-                      }}
-                      stroke="#888"
-                      fontSize={11}
-                      tickLine={false}
-                      axisLine={false}
-                    />
-                    <YAxis
-                      yAxisId="left"
-                      stroke="#888"
-                      fontSize={11}
-                      tickLine={false}
-                      axisLine={false}
-                      tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
-                    />
-                    <YAxis
-                      yAxisId="right"
-                      orientation="right"
-                      stroke="#38BDF8"
-                      fontSize={11}
-                      tickLine={false}
-                      axisLine={false}
-                      tickFormatter={(v) => `${v.toFixed(1)}%`}
-                    />
-                    <ReferenceLine yAxisId="left" y={0} stroke="rgba(255,255,255,0.2)" strokeDasharray="3 3" />
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: "hsl(var(--card))",
-                        borderColor: "rgba(255,255,255,0.15)",
-                        borderRadius: "12px",
-                        color: "#fff",
-                      }}
-                      labelFormatter={(label) => fmtDate(String(label))}
-                      formatter={(val: any, name: any) => {
-                        if (name === "gainLossValue") {
-                          return [`Rs. ${fmtDec(Number(val))}`, "Gain / Loss (Rs.)"];
-                        }
-                        return [`${Number(val).toFixed(2)}%`, "Gain / Loss (%)"];
-                      }}
-                    />
-                    <Legend wrapperStyle={{ paddingTop: "10px", fontSize: "12px" }} />
-                    <Area
-                      yAxisId="left"
-                      type="monotone"
-                      dataKey="gainLossValue"
-                      name="Gain / Loss (Rs.)"
-                      stroke="#10B981"
-                      strokeWidth={2.5}
-                      fillOpacity={1}
-                      fill="url(#glGrad)"
-                    />
-                    <Line
-                      yAxisId="right"
-                      type="monotone"
-                      dataKey="gainLossPercent"
-                      name="Gain / Loss (%)"
-                      stroke="#38BDF8"
-                      strokeWidth={2}
-                      dot={false}
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
-              )}
-
+              {/* 5. Day-over-Day Fluctuations */}
               {activeChart === "daily_change" && (
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={filteredTimeline} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
@@ -616,13 +771,15 @@ export function DailyPortfolioChart({
                     <ReferenceLine y={0} stroke="rgba(255,255,255,0.2)" strokeDasharray="2 2" />
                     <Tooltip
                       contentStyle={{
-                        backgroundColor: "hsl(var(--card))",
+                        backgroundColor: "#0f172a",
                         borderColor: "rgba(255,255,255,0.15)",
                         borderRadius: "12px",
-                        color: "#fff",
+                        color: "#ffffff",
                       }}
+                      itemStyle={{ color: "#ffffff", fontSize: "12px" }}
+                      labelStyle={{ color: "#94a3b8", fontWeight: 600, marginBottom: "4px" }}
                       labelFormatter={(label) => fmtDate(String(label))}
-                      formatter={(val: any, name: any, item: any) => {
+                      formatter={(val: any, _name: any, item: any) => {
                         const pct = item.payload.dailyPercentChange;
                         const sign = Number(val) >= 0 ? "+" : "";
                         return [

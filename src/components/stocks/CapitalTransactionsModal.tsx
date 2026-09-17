@@ -77,13 +77,17 @@ export function CapitalTransactionsModal({ trigger }: CapitalTransactionsModalPr
       });
       if (sorted.length > 0) {
         const first = sorted[0];
+        const holdingCost =
+          first.holdings && first.holdings.length > 0
+            ? first.holdings.reduce((sum, h) => sum + (h.totalCost || 0), 0)
+            : first.totalCost;
         // Approximate date from financial year / month
         const yearPart = first.financialYear.split("/")[0];
         const approxDate = `${yearPart}-04-01`;
         await addCapitalTransaction({
           date: approxDate,
           type: "BUY",
-          amount: first.totalCost,
+          amount: holdingCost,
           notes: `Initial Base Cost (${first.month} ${first.financialYear})`,
         });
       }
