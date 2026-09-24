@@ -271,6 +271,32 @@ export function DailyPortfolioChart({
     };
   }, [filteredTimeline]);
 
+  // Capital flows (Added / Sold) for the active period
+  const periodCapitalFlow = useMemo(() => {
+    let txs = capitalTransactions;
+    if (mode === "monthly") {
+      const targetPrefix = getCalendarYearMonth(selectedFY, selectedMonth);
+      txs = capitalTransactions.filter((tx) => tx.date.startsWith(targetPrefix));
+    } else if (mode === "fy") {
+      const [sYear, eYear] = selectedFY.split("/");
+      const start = `${sYear}-04-01`;
+      const end = `${eYear}-03-31`;
+      txs = capitalTransactions.filter((tx) => tx.date >= start && tx.date <= end);
+    }
+
+    const totalAdded = txs
+      .filter((tx) => tx.type === "BUY")
+      .reduce((sum, tx) => sum + (tx.amount || 0), 0);
+    const buyCount = txs.filter((tx) => tx.type === "BUY").length;
+
+    const totalSold = txs
+      .filter((tx) => tx.type === "SELL")
+      .reduce((sum, tx) => sum + (tx.amount || 0), 0);
+    const sellCount = txs.filter((tx) => tx.type === "SELL").length;
+
+    return { totalAdded, buyCount, totalSold, sellCount };
+  }, [capitalTransactions, mode, selectedFY, selectedMonth]);
+
   const fmt = (n: number) => n.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
   const fmtDec = (n: number) => n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const fmtDate = (dStr: string) => {
@@ -348,7 +374,7 @@ export function DailyPortfolioChart({
             </div>
 
             <InputDailyJsonModal currentFY={selectedFY} currentMonth={selectedMonth} />
-            <CapitalTransactionsModal />
+            <CapitalTransactionsModal currentFY={selectedFY} currentMonth={selectedMonth} />
           </div>
         </div>
       </CardHeader>
@@ -368,7 +394,7 @@ export function DailyPortfolioChart({
         ) : (
           <>
             {/* KPI Highlight Strip */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3.5">
               <div className="p-3.5 rounded-xl bg-background/50 border border-white/5 space-y-1">
                 <span className="text-[11px] text-muted-foreground uppercase font-medium">Market Value</span>
                 <p className="text-xl font-black text-emerald-400 tabular-nums">
@@ -422,6 +448,26 @@ export function DailyPortfolioChart({
                 >
                   {stats.periodChangePercent >= 0 ? "+" : ""}
                   {stats.periodChangePercent.toFixed(2)}% in period
+                </p>
+              </div>
+
+              <div className="p-3.5 rounded-xl bg-background/50 border border-white/5 space-y-1">
+                <span className="text-[11px] text-muted-foreground uppercase font-medium">Total Added (Buy)</span>
+                <p className="text-xl font-black text-cyan-400 tabular-nums">
+                  Rs. {fmt(periodCapitalFlow.totalAdded)}
+                </p>
+                <p className="text-[11px] text-white/40">
+                  {periodCapitalFlow.buyCount} buy {periodCapitalFlow.buyCount === 1 ? "order" : "orders"} in period
+                </p>
+              </div>
+
+              <div className="p-3.5 rounded-xl bg-background/50 border border-white/5 space-y-1">
+                <span className="text-[11px] text-muted-foreground uppercase font-medium">Total Sold (Exit)</span>
+                <p className="text-xl font-black text-amber-400 tabular-nums">
+                  Rs. {fmt(periodCapitalFlow.totalSold)}
+                </p>
+                <p className="text-[11px] text-white/40">
+                  {periodCapitalFlow.sellCount} sell {periodCapitalFlow.sellCount === 1 ? "order" : "orders"} in period
                 </p>
               </div>
             </div>

@@ -30,19 +30,70 @@ import {
 import { DollarSign, Plus, Trash2, ArrowUpRight, ArrowDownRight, Sparkles } from "lucide-react";
 import { useStocks } from "@/context/StocksContext";
 
+import {
+  FINANCIAL_YEAR_MONTHS,
+  currentFinancialYear,
+  currentFinancialMonth,
+  generateFinancialYears,
+} from "@/context/TaxContext";
+
 interface CapitalTransactionsModalProps {
+  currentFY?: string;
+  currentMonth?: string;
   trigger?: React.ReactNode;
 }
 
-export function CapitalTransactionsModal({ trigger }: CapitalTransactionsModalProps) {
+export function CapitalTransactionsModal({
+  currentFY = currentFinancialYear(),
+  currentMonth = currentFinancialMonth(),
+  trigger,
+}: CapitalTransactionsModalProps) {
   const { capitalTransactions, addCapitalTransaction, deleteCapitalTransaction, snapshots } = useStocks();
+  const availableYears = generateFinancialYears(4);
 
   const [open, setOpen] = useState(false);
-  const [date, setDate] = useState<string>(new Date().toISOString().slice(0, 10));
+  const [selectedFY, setSelectedFY] = useState(currentFY);
+  const [selectedMonth, setSelectedMonth] = useState(currentMonth);
+  const [showAllMonths, setShowAllMonths] = useState(false);
+
+  // Month number mapping from Financial Month name
+  const monthNameToNumber = (m: string): string => {
+    const map: Record<string, string> = {
+      Jan: "01", Feb: "02", Mar: "03", Apr: "04", May: "05", Jun: "06",
+      Jul: "07", Aug: "08", Sep: "09", Oct: "10", Nov: "11", Dec: "12",
+    };
+    return map[m] || "01";
+  };
+
+  // Convert FY & Month to calendar YYYY-MM
+  const getCalendarYearMonth = (fy: string, m: string): string => {
+    const [startYearStr, endYearStr] = fy.split("/");
+    const startYear = parseInt(startYearStr, 10);
+    const endYear = parseInt(endYearStr, 10);
+    const mNum = monthNameToNumber(m);
+    const isNextYear = ["Jan", "Feb", "Mar"].includes(m);
+    const year = isNextYear ? endYear : startYear;
+    return `${year}-${mNum}`;
+  };
+
+  const getInitialDateForMonth = (fy: string, m: string): string => {
+    const ym = getCalendarYearMonth(fy, m);
+    const today = new Date().toISOString().slice(0, 10);
+    if (today.startsWith(ym)) return today;
+    return `${ym}-01`;
+  };
+
+  const [date, setDate] = useState<string>(getInitialDateForMonth(currentFY, currentMonth));
   const [type, setType] = useState<"BUY" | "SELL">("BUY");
   const [amount, setAmount] = useState<string>("");
   const [notes, setNotes] = useState<string>("");
   const [saving, setSaving] = useState(false);
+
+  const handleMonthChange = (fy: string, m: string) => {
+    setSelectedFY(fy);
+    setSelectedMonth(m);
+    setDate(getInitialDateForMonth(fy, m));
+  };
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -98,10 +149,26 @@ export function CapitalTransactionsModal({ trigger }: CapitalTransactionsModalPr
 
   const fmt = (n: number) => n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
+  const currentYearMonth = getCalendarYearMonth(selectedFY, selectedMonth);
+
+  // Filter transactions for the selected month (or all if toggled)
+  const displayedTransactions = React.useMemo(() => {
+    if (showAllMonths) {
+      return [...capitalTransactions].sort((a, b) => b.date.localeCompare(a.date));
+    }
+    return capitalTransactions
+      .filter((tx) => tx.date.startsWith(currentYearMonth))
+      .sort((a, b) => b.date.localeCompare(a.date));
+  }, [capitalTransactions, currentYearMonth, showAllMonths]);
+
   const summary = React.useMemo(() => {
+    const targetTxs = showAllMonths
+      ? capitalTransactions
+      : capitalTransactions.filter((tx) => tx.date.startsWith(currentYearMonth));
+
     let totalAdded = 0;
     let totalSold = 0;
-    capitalTransactions.forEach((tx) => {
+    targetTxs.forEach((tx) => {
       if (tx.type === "BUY") totalAdded += tx.amount;
       if (tx.type === "SELL") totalSold += tx.amount;
     });
@@ -110,10 +177,18 @@ export function CapitalTransactionsModal({ trigger }: CapitalTransactionsModalPr
       totalSold,
       netInvested: Math.max(0, totalAdded - totalSold),
     };
-  }, [capitalTransactions]);
+  }, [capitalTransactions, currentYearMonth, showAllMonths]);
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog
+      open={open}
+      onOpenChange={(o) => {
+        setOpen(o);
+        if (o) {
+          handleMonthChange(currentFY, currentMonth);
+        }
+      }}
+    >
       {/* @ts-expect-error - local wrapper might not export asChild correctly */}
       <DialogTrigger asChild>
         {trigger || (
@@ -135,6 +210,42 @@ export function CapitalTransactionsModal({ trigger }: CapitalTransactionsModalPr
         </DialogHeader>
 
         <div className="space-y-5 py-2">
+          {/* Month selector */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <Label className="text-xs text-muted-foreground">Financial Year</Label>
+              <Select
+                value={selectedFY}
+                onValueChange={(v) => { if (v) handleMonthChange(v, selectedMonth); }}
+              >
+                <SelectTrigger className="border-white/10 bg-background/50 h-9 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableYears.map((fy) => (
+                    <SelectItem key={fy} value={fy}>{fy}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-xs text-muted-foreground">Month</Label>
+              <Select
+                value={selectedMonth}
+                onValueChange={(v) => { if (v) handleMonthChange(selectedFY, v); }}
+              >
+                <SelectTrigger className="border-white/10 bg-background/50 h-9 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {FINANCIAL_YEAR_MONTHS.map((m) => (
+                    <SelectItem key={m} value={m}>{m}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
           {/* Summary Strip */}
           <div className="grid grid-cols-3 gap-3">
             <div className="p-3 rounded-xl bg-background/50 border border-white/10 space-y-0.5">
@@ -242,12 +353,29 @@ export function CapitalTransactionsModal({ trigger }: CapitalTransactionsModalPr
 
           {/* Transactions List */}
           <div className="space-y-2">
-            <h4 className="text-sm font-semibold text-white/90">
-              Recorded Capital Transactions ({capitalTransactions.length})
-            </h4>
-            {capitalTransactions.length === 0 ? (
-              <p className="text-xs text-muted-foreground italic py-2">
-                No capital transactions recorded yet. Add your initial purchase or stock additions above.
+            <div className="flex items-center justify-between">
+              <h4 className="text-sm font-semibold text-white/90">
+                {showAllMonths
+                  ? `All Recorded Capital Transactions (${displayedTransactions.length})`
+                  : `Recorded Transactions for ${selectedMonth} ${selectedFY} (${displayedTransactions.length})`}
+              </h4>
+              {capitalTransactions.length > 0 && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowAllMonths(!showAllMonths)}
+                  className="h-6 text-[11px] text-primary/90 hover:text-primary hover:bg-primary/10 px-2"
+                >
+                  {showAllMonths ? `Show ${selectedMonth} only` : `Show All Months (${capitalTransactions.length})`}
+                </Button>
+              )}
+            </div>
+            {displayedTransactions.length === 0 ? (
+              <p className="text-xs text-muted-foreground italic py-3 text-center bg-background/30 rounded-lg border border-white/5">
+                {showAllMonths
+                  ? "No capital transactions recorded yet."
+                  : `No capital transactions recorded for ${selectedMonth} ${selectedFY}. Add transactions for this month above.`}
               </p>
             ) : (
               <div className="border border-white/10 rounded-xl overflow-hidden max-h-[240px] overflow-y-auto">
@@ -262,7 +390,7 @@ export function CapitalTransactionsModal({ trigger }: CapitalTransactionsModalPr
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {capitalTransactions.map((tx) => (
+                    {displayedTransactions.map((tx) => (
                       <TableRow key={tx.id} className="border-white/5 hover:bg-white/5">
                         <TableCell className="text-xs font-medium py-2">{tx.date}</TableCell>
                         <TableCell className="py-2">

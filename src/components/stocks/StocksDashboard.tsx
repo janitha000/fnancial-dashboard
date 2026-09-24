@@ -570,7 +570,7 @@ export function StocksDashboard() {
 
         <div className="flex items-center gap-2">
           <InputDailyJsonModal currentFY={selectedYear} currentMonth={selectedMonth} />
-          <CapitalTransactionsModal />
+          <CapitalTransactionsModal currentFY={selectedYear} currentMonth={selectedMonth} />
           {viewMode === "monthly" && currentSnap && (
             <div className="flex items-center gap-2">
               <AddStockModal 
@@ -803,45 +803,6 @@ export function StocksDashboard() {
               </CardContent>
             </Card>
           </div>
-          
-          <Card>
-            <CardHeader>
-              <CardTitle>MoM Stock Performance</CardTitle>
-              <CardDescription>Market value: Previous Month vs This Month</CardDescription>
-            </CardHeader>
-            <CardContent className="h-[300px]">
-              {stockComparisonData.length > 0 ? (
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={stockComparisonData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-white/5" />
-                    <XAxis dataKey="security" stroke="#888888" fontSize={10} tickLine={false} axisLine={false} />
-                    <YAxis
-                      stroke="#888888"
-                      fontSize={10}
-                      tickLine={false}
-                      axisLine={false}
-                      tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
-                    />
-                    <Tooltip itemStyle={{ color: '#fff' }} labelStyle={{ color: '#aaa' }}
-                      contentStyle={{
-                        backgroundColor: "hsl(var(--card))",
-                        borderColor: "hsl(var(--border))",
-                        borderRadius: "12px",
-                      }}
-                      formatter={(val: any) => val?.toLocaleString()}
-                    />
-                    <Legend />
-                    <Line type="monotone" dataKey="Previous Month" stroke="#9CA3AF" strokeWidth={2} dot={{ r: 3 }} />
-                    <Line type="monotone" dataKey="This Month" stroke="#3B82F6" strokeWidth={2} dot={{ r: 3 }} />
-                  </LineChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="flex h-full items-center justify-center text-muted-foreground italic text-sm">
-                  {currentSnap ? "No comparison data available" : `No snapshot for ${selectedMonth}`}
-                </div>
-              )}
-            </CardContent>
-          </Card>
 
           {/* Holdings Table */}
           {currentSnap && currentSnap.holdings.length > 0 && (
@@ -974,6 +935,52 @@ export function StocksDashboard() {
             </Card>
           )}
 
+          {/* Daily Portfolio Performance for this Month */}
+          <DailyPortfolioChart
+            mode="monthly"
+            selectedFY={selectedYear}
+            selectedMonth={selectedMonth}
+          />
+
+          <Card>
+            <CardHeader>
+              <CardTitle>MoM Stock Performance</CardTitle>
+              <CardDescription>Market value: Previous Month vs This Month</CardDescription>
+            </CardHeader>
+            <CardContent className="h-[300px]">
+              {stockComparisonData.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={stockComparisonData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-white/5" />
+                    <XAxis dataKey="security" stroke="#888888" fontSize={10} tickLine={false} axisLine={false} />
+                    <YAxis
+                      stroke="#888888"
+                      fontSize={10}
+                      tickLine={false}
+                      axisLine={false}
+                      tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
+                    />
+                    <Tooltip itemStyle={{ color: '#fff' }} labelStyle={{ color: '#aaa' }}
+                      contentStyle={{
+                        backgroundColor: "hsl(var(--card))",
+                        borderColor: "hsl(var(--border))",
+                        borderRadius: "12px",
+                      }}
+                      formatter={(val: any) => val?.toLocaleString()}
+                    />
+                    <Legend />
+                    <Line type="monotone" dataKey="Previous Month" stroke="#9CA3AF" strokeWidth={2} dot={{ r: 3 }} />
+                    <Line type="monotone" dataKey="This Month" stroke="#3B82F6" strokeWidth={2} dot={{ r: 3 }} />
+                  </LineChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex h-full items-center justify-center text-muted-foreground italic text-sm">
+                  {currentSnap ? "No comparison data available" : `No snapshot for ${selectedMonth}`}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
           {/* Monthly Dividends Table */}
           {monthlyDividends.length > 0 && (
             <Card>
@@ -1022,12 +1029,7 @@ export function StocksDashboard() {
             </Card>
           )}
 
-          {/* Daily Portfolio Performance for this Month */}
-          <DailyPortfolioChart
-            mode="monthly"
-            selectedFY={selectedYear}
-            selectedMonth={selectedMonth}
-          />
+          
         </>
       )}
 
