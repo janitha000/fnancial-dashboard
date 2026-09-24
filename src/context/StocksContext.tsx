@@ -28,6 +28,7 @@ interface StocksContextType {
   dailyPoints: StockDailyPoint[];
   monthlyDailyInputs: Record<string, string>;
   capitalTransactions: StockCapitalTransaction[];
+  monthlyBaseCosts: Record<string, number>;
   isLoaded: boolean;
   upsertSnapshot: (snapshot: Omit<StockSnapshot, "id">) => Promise<void>;
   deleteSnapshot: (id: string) => Promise<void>;
@@ -42,6 +43,7 @@ interface StocksContextType {
   saveDailyPoints: (points: StockDailyPoint[], monthKey?: string, rawJson?: string) => Promise<void>;
   addCapitalTransaction: (tx: Omit<StockCapitalTransaction, "id">) => Promise<void>;
   deleteCapitalTransaction: (id: string) => Promise<void>;
+  saveMonthlyBaseCost: (monthKey: string, cost: number | null) => Promise<void>;
 }
 
 const StocksContext = createContext<StocksContextType | undefined>(undefined);
@@ -55,6 +57,7 @@ export function StocksProvider({ children }: { children: ReactNode }) {
   const [dailyPoints, setDailyPoints] = useState<StockDailyPoint[]>([]);
   const [monthlyDailyInputs, setMonthlyDailyInputs] = useState<Record<string, string>>({});
   const [capitalTransactions, setCapitalTransactions] = useState<StockCapitalTransaction[]>([]);
+  const [monthlyBaseCosts, setMonthlyBaseCosts] = useState<Record<string, number>>({});
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
@@ -69,6 +72,7 @@ export function StocksProvider({ children }: { children: ReactNode }) {
         setDailyPoints(data.dailyPoints || []);
         setMonthlyDailyInputs(data.monthlyDailyInputs || {});
         setCapitalTransactions(data.capitalTransactions || []);
+        setMonthlyBaseCosts(data.monthlyBaseCosts || {});
       } catch (e) {
         console.error("Failed to load stock data", e);
       } finally {
@@ -86,7 +90,8 @@ export function StocksProvider({ children }: { children: ReactNode }) {
     dGains: StockDividendGain[] = dividendGains,
     dPoints: StockDailyPoint[] = dailyPoints,
     mInputs: Record<string, string> = monthlyDailyInputs,
-    cTrans: StockCapitalTransaction[] = capitalTransactions
+    cTrans: StockCapitalTransaction[] = capitalTransactions,
+    bCosts: Record<string, number> = monthlyBaseCosts
   ) => {
     await saveStockData({
       snapshots: records,
@@ -97,6 +102,7 @@ export function StocksProvider({ children }: { children: ReactNode }) {
       dailyPoints: dPoints,
       monthlyDailyInputs: mInputs,
       capitalTransactions: cTrans,
+      monthlyBaseCosts: bCosts,
     });
   };
 
@@ -207,6 +213,27 @@ export function StocksProvider({ children }: { children: ReactNode }) {
     await persist(snapshots, dividends, transactions, realizedGains, dividendGains, dailyPoints, monthlyDailyInputs, updated);
   };
 
+  const saveMonthlyBaseCost = async (monthKey: string, cost: number | null) => {
+    const updated = { ...monthlyBaseCosts };
+    if (cost === null || isNaN(cost)) {
+      delete updated[monthKey];
+    } else {
+      updated[monthKey] = cost;
+    }
+    setMonthlyBaseCosts(updated);
+    await persist(
+      snapshots,
+      dividends,
+      transactions,
+      realizedGains,
+      dividendGains,
+      dailyPoints,
+      monthlyDailyInputs,
+      capitalTransactions,
+      updated
+    );
+  };
+
   return (
     <StocksContext.Provider
       value={{
@@ -218,6 +245,7 @@ export function StocksProvider({ children }: { children: ReactNode }) {
         dailyPoints,
         monthlyDailyInputs,
         capitalTransactions,
+        monthlyBaseCosts,
         isLoaded,
         upsertSnapshot,
         deleteSnapshot,
@@ -232,6 +260,7 @@ export function StocksProvider({ children }: { children: ReactNode }) {
         saveDailyPoints,
         addCapitalTransaction,
         deleteCapitalTransaction,
+        saveMonthlyBaseCost,
       }}
     >
       {children}

@@ -97,6 +97,7 @@ export type StocksDBState = {
   dailyPoints?: StockDailyPoint[];
   monthlyDailyInputs?: Record<string, string>;
   capitalTransactions?: StockCapitalTransaction[];
+  monthlyBaseCosts?: Record<string, number>;
 };
 
 // ─── KV Persistence ──────────────────────────────────────────────────────────
@@ -117,6 +118,7 @@ export async function getStockData(): Promise<StocksDBState> {
         dailyPoints: [],
         monthlyDailyInputs: {},
         capitalTransactions: [],
+        monthlyBaseCosts: {},
       };
     }
     return { 
@@ -128,6 +130,7 @@ export async function getStockData(): Promise<StocksDBState> {
       dailyPoints: data.dailyPoints || [],
       monthlyDailyInputs: data.monthlyDailyInputs || {},
       capitalTransactions: data.capitalTransactions || [],
+      monthlyBaseCosts: data.monthlyBaseCosts || {},
     };
   } catch (error) {
     console.error("Failed to fetch stock data from KV", error);

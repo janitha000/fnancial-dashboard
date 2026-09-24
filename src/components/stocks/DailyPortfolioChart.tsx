@@ -33,11 +33,13 @@ import {
   ArrowDownRight,
   BarChart2,
   FileJson,
+  Pencil,
 } from "lucide-react";
 import { useStocks } from "@/context/StocksContext";
 import { FINANCIAL_YEAR_MONTHS } from "@/context/TaxContext";
 import { InputDailyJsonModal } from "./InputDailyJsonModal";
 import { CapitalTransactionsModal } from "./CapitalTransactionsModal";
+import { UpdateInvestedCostModal } from "./UpdateInvestedCostModal";
 import type { StockSnapshot } from "@/actions/stocks";
 
 interface DailyPortfolioChartProps {
@@ -51,7 +53,7 @@ export function DailyPortfolioChart({
   selectedFY = "2026/2027",
   selectedMonth = "Aug",
 }: DailyPortfolioChartProps) {
-  const { dailyPoints, capitalTransactions, snapshots } = useStocks();
+  const { dailyPoints, capitalTransactions, snapshots, monthlyBaseCosts } = useStocks();
   const [activeChart, setActiveChart] = useState<
     "gain_loss_rs" | "gain_loss_pct" | "gain_loss_combined" | "value_cost" | "daily_change"
   >("gain_loss_rs");
@@ -110,38 +112,51 @@ export function DailyPortfolioChart({
     return sortedPoints.map((pt, idx) => {
       const ptMonth = pt.date.slice(0, 7); // "YYYY-MM"
 
-      // 1. Initial cost is the total cost under Holdings Detail table of the previous month's snapshot
-      const prevSnapshots = chronoSortedSnapshots.filter((s) => s.yearMonth < ptMonth);
-      const prevSnapshot = prevSnapshots.length > 0 ? prevSnapshots[prevSnapshots.length - 1] : null;
+      // Check for user-defined custom base cost override for this month
+      const customBase = monthlyBaseCosts?.[ptMonth];
 
       let costBasis = 0;
 
-      if (prevSnapshot) {
-        const baseCost = getSnapshotHoldingsCost(prevSnapshot);
-        // Transactions that occurred after the previous month's end up to pt.date
-        const sinceDate = `${prevSnapshot.yearMonth}-31`;
-        const subsequentTxs = sortedTxs.filter((tx) => tx.date > sinceDate && tx.date <= pt.date);
-        const netAdjustment = subsequentTxs.reduce((sum, tx) => {
+      if (customBase !== undefined && customBase !== null) {
+        // Base cost is explicitly set by user for this month
+        const baseCost = customBase;
+        const intraMonthTxs = sortedTxs.filter((tx) => tx.date.startsWith(ptMonth) && tx.date <= pt.date);
+        const netAdjustment = intraMonthTxs.reduce((sum, tx) => {
           return sum + (tx.type === "BUY" ? tx.amount : -tx.amount);
         }, 0);
         costBasis = Math.max(0, baseCost + netAdjustment);
       } else {
-        // Fallback if no prior month snapshot exists:
-        const currentMonthSnap = chronoSortedSnapshots.find((s) => s.yearMonth === ptMonth);
-        if (currentMonthSnap) {
-          const baseCost = getSnapshotHoldingsCost(currentMonthSnap);
-          const intraMonthTxs = sortedTxs.filter((tx) => tx.date.startsWith(ptMonth) && tx.date <= pt.date);
-          const netAdjustment = intraMonthTxs.reduce((sum, tx) => {
+        // 1. Initial cost is the total cost under Holdings Detail table of the previous month's snapshot
+        const prevSnapshots = chronoSortedSnapshots.filter((s) => s.yearMonth < ptMonth);
+        const prevSnapshot = prevSnapshots.length > 0 ? prevSnapshots[prevSnapshots.length - 1] : null;
+
+        if (prevSnapshot) {
+          const baseCost = getSnapshotHoldingsCost(prevSnapshot);
+          // Transactions that occurred after the previous month's end up to pt.date
+          const sinceDate = `${prevSnapshot.yearMonth}-31`;
+          const subsequentTxs = sortedTxs.filter((tx) => tx.date > sinceDate && tx.date <= pt.date);
+          const netAdjustment = subsequentTxs.reduce((sum, tx) => {
             return sum + (tx.type === "BUY" ? tx.amount : -tx.amount);
           }, 0);
           costBasis = Math.max(0, baseCost + netAdjustment);
         } else {
-          // If no snapshots at all, compute running cost from all capital transactions up to date
-          const txsUpToDate = sortedTxs.filter((tx) => tx.date <= pt.date);
-          costBasis = Math.max(
-            0,
-            txsUpToDate.reduce((sum, tx) => sum + (tx.type === "BUY" ? tx.amount : -tx.amount), 0)
-          );
+          // Fallback if no prior month snapshot exists:
+          const currentMonthSnap = chronoSortedSnapshots.find((s) => s.yearMonth === ptMonth);
+          if (currentMonthSnap) {
+            const baseCost = getSnapshotHoldingsCost(currentMonthSnap);
+            const intraMonthTxs = sortedTxs.filter((tx) => tx.date.startsWith(ptMonth) && tx.date <= pt.date);
+            const netAdjustment = intraMonthTxs.reduce((sum, tx) => {
+              return sum + (tx.type === "BUY" ? tx.amount : -tx.amount);
+            }, 0);
+            costBasis = Math.max(0, baseCost + netAdjustment);
+          } else {
+            // If no snapshots at all, compute running cost from all capital transactions up to date
+            const txsUpToDate = sortedTxs.filter((tx) => tx.date <= pt.date);
+            costBasis = Math.max(
+              0,
+              txsUpToDate.reduce((sum, tx) => sum + (tx.type === "BUY" ? tx.amount : -tx.amount), 0)
+            );
+          }
         }
       }
 
@@ -172,7 +187,7 @@ export function DailyPortfolioChart({
         dailyPercentChange,
       };
     });
-  }, [sortedPoints, capitalTransactions, chronoSortedSnapshots]);
+  }, [sortedPoints, capitalTransactions, chronoSortedSnapshots, monthlyBaseCosts]);
 
   // Filter for active view
   const filteredTimeline = useMemo(() => {
@@ -272,6 +287,7 @@ export function DailyPortfolioChart({
   }, [filteredTimeline]);
 
   // Capital flows (Added / Sold) for the active period
+  // Capital flows (Added / Sold / Net Invested) for the active period
   const periodCapitalFlow = useMemo(() => {
     let txs = capitalTransactions;
     if (mode === "monthly") {
@@ -294,8 +310,69 @@ export function DailyPortfolioChart({
       .reduce((sum, tx) => sum + (tx.amount || 0), 0);
     const sellCount = txs.filter((tx) => tx.type === "SELL").length;
 
-    return { totalAdded, buyCount, totalSold, sellCount };
+    const netInvested = totalAdded - totalSold;
+
+    return { totalAdded, buyCount, totalSold, sellCount, netInvested };
   }, [capitalTransactions, mode, selectedFY, selectedMonth]);
+
+  // Growth calculations: True Market Appreciation excluding Capital Inflows/Outflows
+  const growthStats = useMemo(() => {
+    if (filteredTimeline.length === 0) {
+      return {
+        prevMarketValue: 0,
+        netInvested: 0,
+        portfolioGrowthValue: 0,
+        portfolioGrowthPercent: 0,
+      };
+    }
+
+    const currentMarketValue = stats.currentValue;
+    const netInvested = periodCapitalFlow.netInvested;
+
+    let prevMarketValue = 0;
+    if (mode === "monthly") {
+      const currentYearMonth = getCalendarYearMonth(selectedFY, selectedMonth);
+      const prevSnapshots = chronoSortedSnapshots.filter((s) => s.yearMonth < currentYearMonth);
+      const prevSnapshot = prevSnapshots.length > 0 ? prevSnapshots[prevSnapshots.length - 1] : null;
+
+      if (prevSnapshot && prevSnapshot.portfolioValue > 0) {
+        prevMarketValue = prevSnapshot.portfolioValue;
+      } else {
+        // Find last daily point before this month
+        const priorPoints = sortedPoints.filter((p) => p.date < `${currentYearMonth}-01`);
+        if (priorPoints.length > 0) {
+          prevMarketValue = priorPoints[priorPoints.length - 1].portfolio_value;
+        } else {
+          prevMarketValue = filteredTimeline[0]?.marketValue || 0;
+        }
+      }
+    } else if (mode === "fy") {
+      const [sYear] = selectedFY.split("/");
+      const priorPoints = sortedPoints.filter((p) => p.date < `${sYear}-04-01`);
+      if (priorPoints.length > 0) {
+        prevMarketValue = priorPoints[priorPoints.length - 1].portfolio_value;
+      } else {
+        prevMarketValue = filteredTimeline[0]?.marketValue || 0;
+      }
+    } else {
+      // Full view
+      prevMarketValue = filteredTimeline[0]?.marketValue || 0;
+    }
+
+    // Portfolio Growth = (Current MV - Previous MV) - Net Invested (Total Added - Total Sold)
+    const marketValueDiff = currentMarketValue - prevMarketValue;
+    const portfolioGrowthValue = marketValueDiff - netInvested;
+    const portfolioGrowthPercent = prevMarketValue > 0
+      ? (portfolioGrowthValue / prevMarketValue) * 100
+      : 0;
+
+    return {
+      prevMarketValue,
+      netInvested,
+      portfolioGrowthValue,
+      portfolioGrowthPercent,
+    };
+  }, [filteredTimeline, stats.currentValue, periodCapitalFlow.netInvested, mode, selectedFY, selectedMonth, chronoSortedSnapshots, sortedPoints]);
 
   const fmt = (n: number) => n.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
   const fmtDec = (n: number) => n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -375,6 +452,7 @@ export function DailyPortfolioChart({
 
             <InputDailyJsonModal currentFY={selectedFY} currentMonth={selectedMonth} />
             <CapitalTransactionsModal currentFY={selectedFY} currentMonth={selectedMonth} />
+            <UpdateInvestedCostModal currentFY={selectedFY} currentMonth={selectedMonth} />
           </div>
         </div>
       </CardHeader>
@@ -389,12 +467,16 @@ export function DailyPortfolioChart({
                 Click <strong>Input Daily JSON</strong> above to paste your monthly daily portfolio values for {selectedMonth} {selectedFY}.
               </p>
             </div>
-            <InputDailyJsonModal currentFY={selectedFY} currentMonth={selectedMonth} />
+            <div className="flex flex-wrap items-center justify-center gap-2">
+              <InputDailyJsonModal currentFY={selectedFY} currentMonth={selectedMonth} />
+              <UpdateInvestedCostModal currentFY={selectedFY} currentMonth={selectedMonth} />
+            </div>
           </div>
         ) : (
           <>
-            {/* KPI Highlight Strip */}
-            <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3.5">
+            {/* KPI Highlight Strip: 2 rows of 4 cards on desktop / tablet */}
+            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3.5">
+              {/* Card 1: Market Value */}
               <div className="p-3.5 rounded-xl bg-background/50 border border-white/5 space-y-1">
                 <span className="text-[11px] text-muted-foreground uppercase font-medium">Market Value</span>
                 <p className="text-xl font-black text-emerald-400 tabular-nums">
@@ -403,14 +485,32 @@ export function DailyPortfolioChart({
                 <p className="text-[11px] text-white/40">{stats.count} recorded trading days</p>
               </div>
 
-              <div className="p-3.5 rounded-xl bg-background/50 border border-white/5 space-y-1">
-                <span className="text-[11px] text-muted-foreground uppercase font-medium">Invested Cost</span>
-                <p className="text-xl font-black text-white/90 tabular-nums">
-                  Rs. {fmt(stats.currentCost)}
-                </p>
-                <p className="text-[11px] text-white/40">Total capital deployed</p>
-              </div>
+              {/* Card 2: Invested Cost */}
+              <UpdateInvestedCostModal
+                currentFY={selectedFY}
+                currentMonth={selectedMonth}
+                trigger={
+                  <div className="group p-3.5 rounded-xl bg-background/50 border border-white/5 hover:border-emerald-500/30 hover:bg-emerald-500/[0.03] transition-all cursor-pointer space-y-1 relative text-left">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] text-muted-foreground uppercase font-medium">Invested Cost</span>
+                      <span className="flex items-center gap-1 text-[10px] text-emerald-400/70 group-hover:text-emerald-400 font-medium transition-colors">
+                        <Pencil className="h-3 w-3" />
+                        Edit
+                      </span>
+                    </div>
+                    <p className="text-xl font-black text-white/90 group-hover:text-white tabular-nums">
+                      Rs. {fmt(stats.currentCost)}
+                    </p>
+                    <p className="text-[11px] text-white/40 group-hover:text-white/60">
+                      {monthlyBaseCosts?.[getCalendarYearMonth(selectedFY, selectedMonth)] !== undefined
+                        ? "Custom base cost • Click to edit"
+                        : "Total capital deployed • Click to edit"}
+                    </p>
+                  </div>
+                }
+              />
 
+              {/* Card 3: Unrealized Gain / Loss */}
               <div className="p-3.5 rounded-xl bg-background/50 border border-white/5 space-y-1">
                 <span className="text-[11px] text-muted-foreground uppercase font-medium">Gain / Loss</span>
                 <p
@@ -431,6 +531,28 @@ export function DailyPortfolioChart({
                 </p>
               </div>
 
+              {/* Card 4: Portfolio Growth (True Market Appreciation excluding capital additions/withdrawals) */}
+              <div className="p-3.5 rounded-xl bg-background/50 border border-white/5 space-y-1">
+                <span className="text-[11px] text-muted-foreground uppercase font-medium">Portfolio Growth</span>
+                <p
+                  className={`text-xl font-black tabular-nums flex items-center gap-1 ${
+                    growthStats.portfolioGrowthValue >= 0 ? "text-emerald-400" : "text-rose-400"
+                  }`}
+                >
+                  {growthStats.portfolioGrowthValue >= 0 ? "+" : ""}
+                  Rs. {fmt(growthStats.portfolioGrowthValue)}
+                </p>
+                <p
+                  className={`text-[11px] font-semibold ${
+                    growthStats.portfolioGrowthPercent >= 0 ? "text-emerald-400" : "text-rose-400"
+                  }`}
+                >
+                  {growthStats.portfolioGrowthPercent >= 0 ? "+" : ""}
+                  {growthStats.portfolioGrowthPercent.toFixed(2)}% net market growth
+                </p>
+              </div>
+
+              {/* Card 5: Period Change (Raw point-to-point) */}
               <div className="p-3.5 rounded-xl bg-background/50 border border-white/5 space-y-1">
                 <span className="text-[11px] text-muted-foreground uppercase font-medium">Period Change</span>
                 <p
@@ -451,6 +573,7 @@ export function DailyPortfolioChart({
                 </p>
               </div>
 
+              {/* Card 6: Total Added (Buy) */}
               <div className="p-3.5 rounded-xl bg-background/50 border border-white/5 space-y-1">
                 <span className="text-[11px] text-muted-foreground uppercase font-medium">Total Added (Buy)</span>
                 <p className="text-xl font-black text-cyan-400 tabular-nums">
@@ -461,6 +584,7 @@ export function DailyPortfolioChart({
                 </p>
               </div>
 
+              {/* Card 7: Total Sold (Exit) */}
               <div className="p-3.5 rounded-xl bg-background/50 border border-white/5 space-y-1">
                 <span className="text-[11px] text-muted-foreground uppercase font-medium">Total Sold (Exit)</span>
                 <p className="text-xl font-black text-amber-400 tabular-nums">
@@ -468,6 +592,22 @@ export function DailyPortfolioChart({
                 </p>
                 <p className="text-[11px] text-white/40">
                   {periodCapitalFlow.sellCount} sell {periodCapitalFlow.sellCount === 1 ? "order" : "orders"} in period
+                </p>
+              </div>
+
+              {/* Card 8: Total Invested (Net: Added - Sold) */}
+              <div className="p-3.5 rounded-xl bg-background/50 border border-white/5 space-y-1">
+                <span className="text-[11px] text-muted-foreground uppercase font-medium">Total Invested</span>
+                <p
+                  className={`text-xl font-black tabular-nums ${
+                    periodCapitalFlow.netInvested >= 0 ? "text-blue-400" : "text-purple-400"
+                  }`}
+                >
+                  {periodCapitalFlow.netInvested >= 0 ? "+" : ""}
+                  Rs. {fmt(periodCapitalFlow.netInvested)}
+                </p>
+                <p className="text-[11px] text-white/40">
+                  Net flow (Added - Sold)
                 </p>
               </div>
             </div>
