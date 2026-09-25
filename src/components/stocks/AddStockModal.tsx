@@ -158,6 +158,25 @@ async function parseXlsx(file: File): Promise<StockHolding[]> {
   return holdings;
 }
 
+function getDefaultSnapshotDates(financialYear: string, month: string): { startDate: string; endDate: string } {
+  const [sYearStr, eYearStr] = financialYear.split("/");
+  const startYear = parseInt(sYearStr, 10) || new Date().getFullYear();
+  const endYear = parseInt(eYearStr, 10) || startYear + 1;
+  const monthMap: Record<string, number> = {
+    Jan: 1, Feb: 2, Mar: 3, Apr: 4, May: 5, Jun: 6,
+    Jul: 7, Aug: 8, Sep: 9, Oct: 10, Nov: 11, Dec: 12,
+  };
+  const mNum = monthMap[month] || 4;
+  const year = ["Jan", "Feb", "Mar"].includes(month) ? endYear : startYear;
+  const mStr = String(mNum).padStart(2, "0");
+  const lastDay = new Date(year, mNum, 0).getDate();
+  const lastDayStr = String(lastDay).padStart(2, "0");
+  return {
+    startDate: `${year}-${mStr}-01`,
+    endDate: `${year}-${mStr}-${lastDayStr}`,
+  };
+}
+
 // ─── Component ──────────────────────────────────────────────────────────────
 
 export function AddStockModal({ initialData, trigger }: { initialData?: StockSnapshot, trigger?: React.ReactNode }) {
@@ -170,6 +189,13 @@ export function AddStockModal({ initialData, trigger }: { initialData?: StockSna
   // Shared state
   const [fy, setFy] = useState(initialData?.financialYear || currentFinancialYear());
   const [month, setMonth] = useState<string>(initialData?.month || currentFinancialMonth());
+
+  const initialDates = getDefaultSnapshotDates(
+    initialData?.financialYear || currentFinancialYear(),
+    initialData?.month || currentFinancialMonth()
+  );
+  const [startDate, setStartDate] = useState<string>(initialData?.startDate || initialDates.startDate);
+  const [endDate, setEndDate] = useState<string>(initialData?.endDate || initialDates.endDate);
 
   // Dividend state
   const [dividendSecurity, setDividendSecurity] = useState("");
@@ -195,6 +221,9 @@ export function AddStockModal({ initialData, trigger }: { initialData?: StockSna
     if (isOpen && initialData) {
       setFy(initialData.financialYear);
       setMonth(initialData.month);
+      const def = getDefaultSnapshotDates(initialData.financialYear, initialData.month);
+      setStartDate(initialData.startDate || def.startDate);
+      setEndDate(initialData.endDate || def.endDate);
       setTotalCost(String(initialData.totalCost));
       setPortfolioValue(String(initialData.portfolioValue));
       setCashAvailable(initialData.cashAvailable ? String(initialData.cashAvailable) : "");
@@ -214,8 +243,13 @@ export function AddStockModal({ initialData, trigger }: { initialData?: StockSna
 
   const reset = () => {
     setActiveTab("manual");
-    setFy(currentFinancialYear());
-    setMonth(currentFinancialMonth());
+    const currentFY = currentFinancialYear();
+    const currentM = currentFinancialMonth();
+    setFy(currentFY);
+    setMonth(currentM);
+    const def = getDefaultSnapshotDates(currentFY, currentM);
+    setStartDate(def.startDate);
+    setEndDate(def.endDate);
     setTotalCost("");
     setPortfolioValue("");
     setCashAvailable("");
@@ -230,6 +264,20 @@ export function AddStockModal({ initialData, trigger }: { initialData?: StockSna
     setDividendSecurity("");
     setDividendAmount("");
     if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const handleFyChange = (newFy: string) => {
+    setFy(newFy);
+    const def = getDefaultSnapshotDates(newFy, month);
+    setStartDate(def.startDate);
+    setEndDate(def.endDate);
+  };
+
+  const handleMonthChange = (newMonth: string) => {
+    setMonth(newMonth);
+    const def = getDefaultSnapshotDates(fy, newMonth);
+    setStartDate(def.startDate);
+    setEndDate(def.endDate);
   };
 
   const handleFileChange = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -256,6 +304,8 @@ export function AddStockModal({ initialData, trigger }: { initialData?: StockSna
     await upsertSnapshot({
       financialYear: fy,
       month,
+      startDate: startDate || undefined,
+      endDate: endDate || undefined,
       totalCost: Number(totalCost),
       portfolioValue: Number(portfolioValue),
       cashAvailable: cashAvailable ? Number(cashAvailable) : 0,
@@ -273,6 +323,8 @@ export function AddStockModal({ initialData, trigger }: { initialData?: StockSna
     await upsertSnapshot({
       financialYear: fy,
       month,
+      startDate: startDate || undefined,
+      endDate: endDate || undefined,
       totalCost: Number(xlsxTotalCost),
       portfolioValue: derivedPortfolioValue,
       cashAvailable: xlsxCashAvailable ? Number(xlsxCashAvailable) : 0,
@@ -310,7 +362,7 @@ export function AddStockModal({ initialData, trigger }: { initialData?: StockSna
 
       <DialogContent className="sm:max-w-[520px] bg-card border-white/10 text-card-foreground">
         <DialogHeader>
-          <DialogTitle>Add Month-End Portfolio</DialogTitle>
+          <DialogTitle>{initialData ? "Edit Month-End Snapshot" : "Add Month-End Portfolio"}</DialogTitle>
         </DialogHeader>
 
         {/* Tab switcher */}
@@ -357,7 +409,7 @@ export function AddStockModal({ initialData, trigger }: { initialData?: StockSna
         <div className="grid grid-cols-2 gap-4 mt-2">
           <div className="space-y-2">
             <Label htmlFor="stock-fy">Financial Year</Label>
-            <Select value={fy} onValueChange={(v) => { if (v) setFy(v); }}>
+            <Select value={fy} onValueChange={(v) => { if (v) handleFyChange(v); }}>
               <SelectTrigger id="stock-fy" className="bg-background/50 border-white/10">
                 <SelectValue placeholder="Select Year" />
               </SelectTrigger>
@@ -370,7 +422,7 @@ export function AddStockModal({ initialData, trigger }: { initialData?: StockSna
           </div>
           <div className="space-y-2">
             <Label htmlFor="stock-month">Month</Label>
-            <Select value={month} onValueChange={(v) => { if (v) setMonth(v); }}>
+            <Select value={month} onValueChange={(v) => { if (v) handleMonthChange(v); }}>
               <SelectTrigger id="stock-month" className="bg-background/50 border-white/10">
                 <SelectValue placeholder="Select Month" />
               </SelectTrigger>
@@ -382,6 +434,36 @@ export function AddStockModal({ initialData, trigger }: { initialData?: StockSna
             </Select>
           </div>
         </div>
+
+        {/* ── Snapshot Period Date Range (Start Date - End Date) ── */}
+        {activeTab !== "dividend" && (
+          <div className="grid grid-cols-2 gap-4 mt-1 p-3 rounded-xl bg-background/40 border border-white/5">
+            <div className="space-y-1.5">
+              <Label htmlFor="stock-start-date" className="text-xs text-muted-foreground flex items-center gap-1 font-medium">
+                <span>Start Date</span>
+              </Label>
+              <Input
+                id="stock-start-date"
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="bg-background/80 border-white/10 text-white text-xs h-9"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="stock-end-date" className="text-xs text-muted-foreground flex items-center gap-1 font-medium">
+                <span>End Date (As of)</span>
+              </Label>
+              <Input
+                id="stock-end-date"
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="bg-background/80 border-white/10 text-white text-xs h-9"
+              />
+            </div>
+          </div>
+        )}
 
         {/* ── Manual Entry Form ── */}
         {activeTab === "manual" && (

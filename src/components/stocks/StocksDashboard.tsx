@@ -54,8 +54,10 @@ import { AddStockModal } from "./AddStockModal";
 import { StockwiseDashboard } from "./StockwiseDashboard";
 import { RealizedGainsDashboard } from "./RealizedGainsDashboard";
 import { DailyPortfolioChart } from "./DailyPortfolioChart";
+import { MonthlyPortfolioGrowthChart } from "./MonthlyPortfolioGrowthChart";
 import { InputDailyJsonModal } from "./InputDailyJsonModal";
 import { CapitalTransactionsModal } from "./CapitalTransactionsModal";
+import { EditSnapshotDatesModal } from "./EditSnapshotDatesModal";
 import {
   Trash2,
   TrendingUp,
@@ -68,6 +70,7 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   Pencil,
+  Calendar,
 } from "lucide-react";
 
 const fmt = (n: number) =>
@@ -573,6 +576,7 @@ export function StocksDashboard() {
           <CapitalTransactionsModal currentFY={selectedYear} currentMonth={selectedMonth} />
           {viewMode === "monthly" && currentSnap && (
             <div className="flex items-center gap-2">
+              <EditSnapshotDatesModal snapshot={currentSnap} />
               <AddStockModal 
                 initialData={currentSnap}
                 trigger={
@@ -1141,6 +1145,12 @@ export function StocksDashboard() {
             </CardContent>
           </Card>
 
+          {/* Monthly Portfolio Growth for this FY */}
+          <MonthlyPortfolioGrowthChart
+            mode="fy"
+            selectedFY={selectedYear}
+          />
+
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <Card>
               <CardHeader>
@@ -1560,6 +1570,11 @@ export function StocksDashboard() {
               </ResponsiveContainer>
             </CardContent>
           </Card>
+
+          {/* Monthly Portfolio Growth across All Time */}
+          <MonthlyPortfolioGrowthChart
+            mode="full"
+          />
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <Card>

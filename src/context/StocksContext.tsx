@@ -31,6 +31,7 @@ interface StocksContextType {
   monthlyBaseCosts: Record<string, number>;
   isLoaded: boolean;
   upsertSnapshot: (snapshot: Omit<StockSnapshot, "id">) => Promise<void>;
+  updateSnapshotDates: (id: string, startDate?: string, endDate?: string) => Promise<void>;
   deleteSnapshot: (id: string) => Promise<void>;
   addDividend: (dividend: Omit<StockDividend, "id">) => Promise<void>;
   deleteDividend: (id: string) => Promise<void>;
@@ -120,13 +121,21 @@ export function StocksProvider({ children }: { children: ReactNode }) {
       updated = [...snapshots, newSnap];
     }
     setSnapshots(updated);
-    await persist(updated, dividends, transactions, realizedGains, dividendGains, dailyPoints, monthlyDailyInputs, capitalTransactions);
+    await persist(updated, dividends, transactions, realizedGains, dividendGains, dailyPoints, monthlyDailyInputs, capitalTransactions, monthlyBaseCosts);
+  };
+
+  const updateSnapshotDates = async (id: string, startDate?: string, endDate?: string) => {
+    const updated = snapshots.map((s) =>
+      s.id === id ? { ...s, startDate, endDate } : s
+    );
+    setSnapshots(updated);
+    await persist(updated, dividends, transactions, realizedGains, dividendGains, dailyPoints, monthlyDailyInputs, capitalTransactions, monthlyBaseCosts);
   };
 
   const deleteSnapshot = async (id: string) => {
     const updated = snapshots.filter((s) => s.id !== id);
     setSnapshots(updated);
-    await persist(updated, dividends, transactions, realizedGains, dividendGains, dailyPoints, monthlyDailyInputs, capitalTransactions);
+    await persist(updated, dividends, transactions, realizedGains, dividendGains, dailyPoints, monthlyDailyInputs, capitalTransactions, monthlyBaseCosts);
   };
 
   const addDividend = async (dividend: Omit<StockDividend, "id">) => {
@@ -248,6 +257,7 @@ export function StocksProvider({ children }: { children: ReactNode }) {
         monthlyBaseCosts,
         isLoaded,
         upsertSnapshot,
+        updateSnapshotDates,
         deleteSnapshot,
         addDividend,
         deleteDividend,

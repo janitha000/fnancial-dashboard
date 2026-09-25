@@ -31,6 +31,8 @@ export type StockSnapshot = {
   id: string;
   financialYear: string;  // e.g. "2025/2026"
   month: string;          // e.g. "Apr"
+  startDate?: string;     // e.g. "2025-04-01"
+  endDate?: string;       // e.g. "2025-04-30"
   totalCost: number;
   portfolioValue: number;
   cashAvailable?: number; // Cash available in account
