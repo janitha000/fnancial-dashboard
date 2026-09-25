@@ -149,6 +149,10 @@ export function MonthlyPortfolioGrowthChart({
       });
     }
 
+    // Only take data available after 2026/08 month
+    const CUTOFF_YEAR_MONTH = "2026-08";
+    targetMonths = targetMonths.filter((m) => m.yearMonth > CUTOFF_YEAR_MONTH);
+
     let runningCumulativeGrowth = 0;
 
     const results = targetMonths.map((item, idx) => {
