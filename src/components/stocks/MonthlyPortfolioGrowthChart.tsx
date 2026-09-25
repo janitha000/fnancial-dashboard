@@ -187,23 +187,22 @@ export function MonthlyPortfolioGrowthChart({
         };
       }
 
-      // Determine Starting Market Value (end of previous month)
+      // Determine Starting Market Value (identical to DailyPortfolioChart logic)
       let startMarketValue = 0;
       const prevSnapshots = chronoSortedSnapshots.filter((s) => s.yearMonth < yearMonth);
       const prevSnap = prevSnapshots.length > 0 ? prevSnapshots[prevSnapshots.length - 1] : null;
 
-      // Check daily points prior to this month
-      const priorPoints = sortedPoints.filter((p) => p.date < `${yearMonth}-01`);
-      if (priorPoints.length > 0) {
-        startMarketValue = priorPoints[priorPoints.length - 1].portfolio_value;
-      } else if (prevSnap && prevSnap.portfolioValue > 0) {
+      if (prevSnap && prevSnap.portfolioValue > 0) {
         startMarketValue = prevSnap.portfolioValue;
-      } else if (pointsInMonth.length > 0) {
-        // Fallback: use first daily point or custom base cost
-        const customBase = monthlyBaseCosts?.[yearMonth];
-        startMarketValue = customBase ?? (prevSnap ? getSnapshotHoldingsCost(prevSnap) : pointsInMonth[0].portfolio_value);
       } else {
-        startMarketValue = snap ? snap.totalCost : 0;
+        const priorPoints = sortedPoints.filter((p) => p.date < `${yearMonth}-01`);
+        if (priorPoints.length > 0) {
+          startMarketValue = priorPoints[priorPoints.length - 1].portfolio_value;
+        } else if (pointsInMonth.length > 0) {
+          startMarketValue = pointsInMonth[0].portfolio_value;
+        } else if (snap) {
+          startMarketValue = snap.totalCost;
+        }
       }
 
       // Capital flows in this month
