@@ -316,6 +316,7 @@ export function DailyPortfolioChart({
   }, [capitalTransactions, mode, selectedFY, selectedMonth]);
 
   // Growth calculations: True Market Appreciation excluding Capital Inflows/Outflows
+  // Growth = Current Market Value - (Previous Market Value [from daily JSON] + Period Net Invested)
   const growthStats = useMemo(() => {
     if (filteredTimeline.length === 0) {
       return {
@@ -332,36 +333,49 @@ export function DailyPortfolioChart({
     let prevMarketValue = 0;
     if (mode === "monthly") {
       const currentYearMonth = getCalendarYearMonth(selectedFY, selectedMonth);
-      const prevSnapshots = chronoSortedSnapshots.filter((s) => s.yearMonth < currentYearMonth);
-      const prevSnapshot = prevSnapshots.length > 0 ? prevSnapshots[prevSnapshots.length - 1] : null;
-
-      if (prevSnapshot && prevSnapshot.portfolioValue > 0) {
-        prevMarketValue = prevSnapshot.portfolioValue;
+      
+      // 1. Prioritize the last recorded daily market value from daily JSON before this month
+      const priorDailyPoints = sortedPoints.filter((p) => p.date < `${currentYearMonth}-01`);
+      if (priorDailyPoints.length > 0) {
+        prevMarketValue = priorDailyPoints[priorDailyPoints.length - 1].portfolio_value;
       } else {
-        // Find last daily point before this month
-        const priorPoints = sortedPoints.filter((p) => p.date < `${currentYearMonth}-01`);
-        if (priorPoints.length > 0) {
-          prevMarketValue = priorPoints[priorPoints.length - 1].portfolio_value;
+        // Fallback: previous month's snapshot if available
+        const prevSnapshots = chronoSortedSnapshots.filter((s) => s.yearMonth < currentYearMonth);
+        const prevSnapshot = prevSnapshots.length > 0 ? prevSnapshots[prevSnapshots.length - 1] : null;
+
+        if (prevSnapshot && prevSnapshot.portfolioValue > 0) {
+          prevMarketValue = prevSnapshot.portfolioValue;
         } else {
+          // If no prior history exists, use the first recorded day of the current month
           prevMarketValue = filteredTimeline[0]?.marketValue || 0;
         }
       }
     } else if (mode === "fy") {
       const [sYear] = selectedFY.split("/");
-      const priorPoints = sortedPoints.filter((p) => p.date < `${sYear}-04-01`);
-      if (priorPoints.length > 0) {
-        prevMarketValue = priorPoints[priorPoints.length - 1].portfolio_value;
+      const fyStartDate = `${sYear}-04-01`;
+
+      // 1. Prioritize the last recorded daily point before this Financial Year
+      const priorDailyPoints = sortedPoints.filter((p) => p.date < fyStartDate);
+      if (priorDailyPoints.length > 0) {
+        prevMarketValue = priorDailyPoints[priorDailyPoints.length - 1].portfolio_value;
       } else {
-        prevMarketValue = filteredTimeline[0]?.marketValue || 0;
+        // Fallback: latest snapshot before this FY
+        const prevSnapshots = chronoSortedSnapshots.filter((s) => s.yearMonth < `${sYear}-04`);
+        const prevSnapshot = prevSnapshots.length > 0 ? prevSnapshots[prevSnapshots.length - 1] : null;
+
+        if (prevSnapshot && prevSnapshot.portfolioValue > 0) {
+          prevMarketValue = prevSnapshot.portfolioValue;
+        } else {
+          prevMarketValue = filteredTimeline[0]?.marketValue || 0;
+        }
       }
     } else {
-      // Full view
+      // Full view: use the very first recorded market value in history
       prevMarketValue = filteredTimeline[0]?.marketValue || 0;
     }
 
-    // Portfolio Growth = (Current MV - Previous MV) - Net Invested (Total Added - Total Sold)
-    const marketValueDiff = currentMarketValue - prevMarketValue;
-    const portfolioGrowthValue = marketValueDiff - netInvested;
+    // Portfolio Growth = Current Market Value - (Previous Market Value + Net Invested)
+    const portfolioGrowthValue = currentMarketValue - (prevMarketValue + netInvested);
     const portfolioGrowthPercent = prevMarketValue > 0
       ? (portfolioGrowthValue / prevMarketValue) * 100
       : 0;
@@ -372,7 +386,7 @@ export function DailyPortfolioChart({
       portfolioGrowthValue,
       portfolioGrowthPercent,
     };
-  }, [filteredTimeline, stats.currentValue, periodCapitalFlow.netInvested, mode, selectedFY, selectedMonth, chronoSortedSnapshots, sortedPoints]);
+  }, [filteredTimeline, stats.currentValue, periodCapitalFlow.netInvested, mode, selectedFY, selectedMonth, sortedPoints, chronoSortedSnapshots]);
 
   const fmt = (n: number) => n.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
   const fmtDec = (n: number) => n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
