@@ -808,6 +808,15 @@ export function StocksDashboard() {
             </Card>
           </div>
 
+
+
+          {/* Daily Portfolio Performance for this Month */}
+          <DailyPortfolioChart
+            mode="monthly"
+            selectedFY={selectedYear}
+            selectedMonth={selectedMonth}
+          />
+
           {/* Holdings Table */}
           {currentSnap && currentSnap.holdings.length > 0 && (
             <Card>
@@ -938,13 +947,6 @@ export function StocksDashboard() {
               </CardContent>
             </Card>
           )}
-
-          {/* Daily Portfolio Performance for this Month */}
-          <DailyPortfolioChart
-            mode="monthly"
-            selectedFY={selectedYear}
-            selectedMonth={selectedMonth}
-          />
 
           <Card>
             <CardHeader>
