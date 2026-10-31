@@ -578,9 +578,6 @@ export default function WealthPage() {
           </TabsContent>
 
           <TabsContent value="full" className="mt-6 space-y-6">
-            {/* Predicted Target vs Actual Wealth Trajectory */}
-            <TargetVsActualChart sortedMonths={sortedMonths} getMonthTotal={getMonthTotal} />
-
             <div className="grid gap-6">
               <Card className="bg-white/5 border-white/10">
                 <CardHeader><CardTitle className="flex items-center gap-2"><LineChartIcon className="w-5 h-5 text-blue-400" /> All-Time Assets Trend</CardTitle></CardHeader>
@@ -634,6 +631,9 @@ export default function WealthPage() {
                   </div>
                 </CardContent>
               </Card>
+
+              {/* Predicted Target vs Actual Wealth Trajectory */}
+              <TargetVsActualChart sortedMonths={sortedMonths} getMonthTotal={getMonthTotal} />
             </div>
           </TabsContent>
         </Tabs>
