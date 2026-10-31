@@ -7,12 +7,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useWealth, WealthRecord, WealthMonth, sortWealthMonths } from "@/context/WealthContext";
+import { TargetVsActualChart } from "@/components/wealth/TargetVsActualChart";
 import { PieChart, Pie, Cell, LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { Trash2, TrendingUp, TrendingDown, PieChart as PieIcon, Table as TableIcon, ChevronLeft, ChevronRight, LineChart as LineChartIcon, Sparkles } from "lucide-react";
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16', '#ef4444', '#14b8a6', '#6366f1'];
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-const YEARS = ["2024", "2025", "2026", "2027", "2024/2025", "2025/2026", "2026/2027"];
+const YEARS = [
+  "2024", "2025", "2026", "2027", "2028", "2029", "2030",
+  "2024/2025", "2025/2026", "2026/2027", "2027/2028", "2028/2029", "2029/2030", "2030/2031"
+];
 
 const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }: any) => {
   if (percent < 0.05) return null;
@@ -574,6 +578,9 @@ export default function WealthPage() {
           </TabsContent>
 
           <TabsContent value="full" className="mt-6 space-y-6">
+            {/* Predicted Target vs Actual Wealth Trajectory */}
+            <TargetVsActualChart sortedMonths={sortedMonths} getMonthTotal={getMonthTotal} />
+
             <div className="grid gap-6">
               <Card className="bg-white/5 border-white/10">
                 <CardHeader><CardTitle className="flex items-center gap-2"><LineChartIcon className="w-5 h-5 text-blue-400" /> All-Time Assets Trend</CardTitle></CardHeader>
