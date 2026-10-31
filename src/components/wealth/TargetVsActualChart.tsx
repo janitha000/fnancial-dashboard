@@ -66,9 +66,9 @@ export function parseToCalendarYearMonth(yearStr: string, monthStr: string): {
 
 export function TargetVsActualChart({ sortedMonths, getMonthTotal }: TargetVsActualChartProps) {
   // Timeline Bounds:
-  // History starts from 03/2024 (March 2024)
-  const START_YEAR = 2024;
-  const START_MONTH = 3; // Mar 2024
+  // Starts from 03/2025 (March 2025)
+  const START_YEAR = 2025;
+  const START_MONTH = 3; // Mar 2025
 
   // Base: 59Mn on 10/2026 (October 2026)
   const BASE_YEAR = 2026;
@@ -141,32 +141,32 @@ export function TargetVsActualChart({ sortedMonths, getMonthTotal }: TargetVsAct
       const isTarget = curY === TARGET_YEAR && curM === TARGET_MONTH;
       const isHistorical = isBeforeBase;
 
-      // Target calculation: active from 10/2026 (base) to 12/2029 (target)
-      let targetVal: number | null = null;
-      if (!isBeforeBase) {
-        const step = (curY - BASE_YEAR) * 12 + (curM - BASE_MONTH);
-        if (model === "linear") {
-          targetVal = BASE_TARGET_AMOUNT + ((TARGET_AMOUNT - BASE_TARGET_AMOUNT) * step) / TOTAL_TARGET_INTERVALS;
-        } else {
-          targetVal = BASE_TARGET_AMOUNT * Math.pow(1 + monthlyCompoundRate, step);
-        }
+      // Target calculation: calculated linearly back for old dates as well!
+      // step is 0 at 10/2026, negative for earlier dates (e.g. -19 at 03/2025), positive up to 38 at 12/2029
+      const step = (curY - BASE_YEAR) * 12 + (curM - BASE_MONTH);
+      let targetVal: number;
+      if (model === "linear") {
+        targetVal = BASE_TARGET_AMOUNT + ((TARGET_AMOUNT - BASE_TARGET_AMOUNT) * step) / TOTAL_TARGET_INTERVALS;
+      } else {
+        targetVal = BASE_TARGET_AMOUNT * Math.pow(1 + monthlyCompoundRate, step);
       }
 
       // Check if actual exists
       const actualEntry = actualDataMap.get(key);
       const actualVal = actualEntry ? actualEntry.total : null;
 
-      const variance = actualVal !== null && targetVal !== null ? actualVal - targetVal : null;
-      const variancePct = actualVal !== null && targetVal !== null ? (variance! / targetVal) * 100 : null;
+      const variance = actualVal !== null ? actualVal - targetVal : null;
+      const variancePct = actualVal !== null ? (variance! / targetVal) * 100 : null;
 
       points.push({
         key,
         month: label,
         year: curY,
         monthNum: curM,
-        target: targetVal !== null ? Math.round(targetVal) : null,
+        step,
+        target: Math.round(targetVal),
         actual: actualVal,
-        targetMn: targetVal !== null ? Number((targetVal / 1_000_000).toFixed(2)) : null,
+        targetMn: Number((targetVal / 1_000_000).toFixed(2)),
         actualMn: actualVal !== null ? Number((actualVal / 1_000_000).toFixed(2)) : null,
         variance: variance !== null ? Math.round(variance) : null,
         variancePct: variancePct !== null ? Number(variancePct.toFixed(2)) : null,
@@ -188,7 +188,7 @@ export function TargetVsActualChart({ sortedMonths, getMonthTotal }: TargetVsAct
 
   // Statistics
   const latestTargetPoint = chartData.find((p) => p.key === latestRecordedParsed.key) || chartData.find((p) => p.isBase);
-  const currentVariance = latestTargetPoint && latestTargetPoint.actual !== null && latestTargetPoint.target !== null
+  const currentVariance = latestTargetPoint && latestTargetPoint.actual !== null
     ? latestTargetPoint.actual - latestTargetPoint.target
     : baseActualAmount - BASE_TARGET_AMOUNT;
   const currentVariancePct = latestTargetPoint && latestTargetPoint.target
@@ -213,6 +213,10 @@ export function TargetVsActualChart({ sortedMonths, getMonthTotal }: TargetVsAct
     });
   }, [chartData, tableFilter]);
 
+  // Calculate March 2025 starting target amount for summary display
+  const startPoint = chartData[0];
+  const startTargetMn = startPoint ? startPoint.targetMn : 38.5;
+
   return (
     <Card className="border-amber-500/20 bg-gradient-to-br from-amber-500/10 via-background to-background shadow-2xl relative overflow-hidden">
       <div className="absolute top-0 right-0 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl -mr-32 -mt-32 pointer-events-none" />
@@ -228,7 +232,7 @@ export function TargetVsActualChart({ sortedMonths, getMonthTotal }: TargetVsAct
                   Target vs Actual Wealth Trajectory
                 </CardTitle>
                 <CardDescription className="text-sm text-muted-foreground mt-0.5">
-                  Timeline: <span className="font-semibold text-white">03/2024</span> → Base{" "}
+                  Timeline: Start <span className="font-semibold text-emerald-300">03/2025 ({startTargetMn.toFixed(1)} Mn)</span> → Base{" "}
                   <span className="font-semibold text-blue-300">59 Mn (10/2026)</span> → Target{" "}
                   <span className="font-semibold text-amber-300">100 Mn (12/2029)</span>
                 </CardDescription>
@@ -248,7 +252,7 @@ export function TargetVsActualChart({ sortedMonths, getMonthTotal }: TargetVsAct
                 }`}
               >
                 <History className="w-3.5 h-3.5 mr-1.5" />
-                From 03/2024 to 12/2029
+                From 03/2025 to 12/2029
               </Button>
               <Button
                 size="sm"
@@ -292,7 +296,18 @@ export function TargetVsActualChart({ sortedMonths, getMonthTotal }: TargetVsAct
       <CardContent className="space-y-6">
         {/* Key Metric Highlights */}
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
-          {/* Card 1: Base */}
+          {/* Card 1: Start 03/2025 */}
+          <div className="bg-background/40 border border-white/10 rounded-xl p-3.5 space-y-1">
+            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+              <Calendar className="w-3.5 h-3.5 text-emerald-400" /> Start (03/2025)
+            </span>
+            <div className="text-xl font-black text-white">{startTargetMn.toFixed(2)} <span className="text-xs font-normal text-muted-foreground">Mn</span></div>
+            <p className="text-[11px] text-muted-foreground">
+              Actual: <span className="text-emerald-400 font-medium">{actualDataMap.has("2025-03") ? `${(actualDataMap.get("2025-03")!.total / 1_000_000).toFixed(2)} Mn` : "—"}</span>
+            </p>
+          </div>
+
+          {/* Card 2: Base 10/2026 */}
           <div className="bg-background/40 border border-blue-500/20 rounded-xl p-3.5 space-y-1">
             <span className="text-xs font-semibold text-blue-300 uppercase tracking-wider flex items-center gap-1.5">
               <Calendar className="w-3.5 h-3.5 text-blue-400" /> Base (10/2026)
@@ -303,28 +318,19 @@ export function TargetVsActualChart({ sortedMonths, getMonthTotal }: TargetVsAct
             </p>
           </div>
 
-          {/* Card 2: Target */}
+          {/* Card 3: Target 12/2029 */}
           <div className="bg-background/40 border border-amber-500/20 rounded-xl p-3.5 space-y-1 bg-gradient-to-b from-amber-500/5 to-transparent">
             <span className="text-xs font-semibold text-amber-300 uppercase tracking-wider flex items-center gap-1.5">
               <Target className="w-3.5 h-3.5 text-amber-400" /> Target (12/2029)
             </span>
             <div className="text-xl font-black text-amber-300">100.00 <span className="text-xs font-normal text-amber-400/80">Mn</span></div>
-            <p className="text-[11px] text-amber-200/70">{TOTAL_TARGET_INTERVALS} months trajectory</p>
-          </div>
-
-          {/* Card 3: Remaining Needed */}
-          <div className="bg-background/40 border border-white/10 rounded-xl p-3.5 space-y-1">
-            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-              <TrendingUp className="w-3.5 h-3.5 text-emerald-400" /> Remaining Growth
-            </span>
-            <div className="text-xl font-black text-white">+{(remainingToTarget / 1_000_000).toFixed(2)} <span className="text-xs font-normal text-muted-foreground">Mn</span></div>
-            <p className="text-[11px] text-emerald-400 font-medium">+{remainingGrowthPct.toFixed(1)}% total expansion</p>
+            <p className="text-[11px] text-amber-200/70">{TOTAL_TARGET_INTERVALS} mo from base</p>
           </div>
 
           {/* Card 4: Required Run-Rate */}
           <div className="bg-background/40 border border-white/10 rounded-xl p-3.5 space-y-1">
             <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-              <Clock className="w-3.5 h-3.5 text-purple-400" /> Required Pace
+              <Clock className="w-3.5 h-3.5 text-purple-400" /> Linear Run-Rate
             </span>
             <div className="text-xl font-black text-white">
               {model === "linear" ? (
@@ -376,7 +382,7 @@ export function TargetVsActualChart({ sortedMonths, getMonthTotal }: TargetVsAct
           </div>
           <Progress value={progressTowardsTargetPct} className="h-2.5 bg-white/10" />
           <div className="flex items-center justify-between text-[11px] text-muted-foreground">
-            <span>Historical: 03/2024</span>
+            <span>Start: {startTargetMn.toFixed(2)} Mn (03/2025)</span>
             <span className="text-blue-300 font-medium">Base: 59.00 Mn (10/2026)</span>
             <span>Halfway: 79.50 Mn</span>
             <span className="text-amber-400 font-medium">Target: 100.00 Mn (12/2029)</span>
@@ -420,7 +426,7 @@ export function TargetVsActualChart({ sortedMonths, getMonthTotal }: TargetVsAct
                 fontSize={11}
                 tickLine={false}
                 axisLine={false}
-                domain={[35, 110]}
+                domain={[30, 110]}
                 tickFormatter={(val) => `${val}M`}
               />
 
@@ -485,11 +491,11 @@ export function TargetVsActualChart({ sortedMonths, getMonthTotal }: TargetVsAct
                 connectNulls={false}
               />
 
-              {/* Predicted Target Dashed Line */}
+              {/* Predicted Target Dashed Line (Continuous across all months) */}
               <Line
                 type="monotone"
                 dataKey="targetMn"
-                name={`Predicted Target (${model === "linear" ? "Linear" : "CAGR"})`}
+                name={`Predicted Target (${model === "linear" ? "Linear Back/Forward" : "CAGR"})`}
                 stroke="#f59e0b"
                 strokeWidth={2.5}
                 strokeDasharray="5 5"
@@ -525,7 +531,7 @@ export function TargetVsActualChart({ sortedMonths, getMonthTotal }: TargetVsAct
                     tableFilter === "all" ? "bg-amber-500 text-black font-bold" : "text-muted-foreground"
                   }`}
                 >
-                  All (03/2024–12/2029)
+                  All (03/2025–12/2029)
                 </Button>
                 <Button
                   size="sm"
@@ -569,9 +575,8 @@ export function TargetVsActualChart({ sortedMonths, getMonthTotal }: TargetVsAct
                   <tbody>
                     {tableRows.map((row) => {
                       const isRecorded = row.actual !== null;
-                      const hasTarget = row.target !== null;
                       const isAhead = row.variance !== null && row.variance >= 0;
-                      const progressPct = ((row.actual !== null ? row.actual : (row.target || 0)) / TARGET_AMOUNT) * 100;
+                      const progressPct = ((row.actual !== null ? row.actual : row.target) / TARGET_AMOUNT) * 100;
 
                       return (
                         <tr
@@ -582,21 +587,21 @@ export function TargetVsActualChart({ sortedMonths, getMonthTotal }: TargetVsAct
                               : row.isTarget
                               ? "bg-amber-500/15 font-semibold"
                               : row.isHistorical
-                              ? "opacity-85"
+                              ? "opacity-90"
                               : ""
                           }`}
                         >
                           <td className="py-2.5 px-3 font-medium flex items-center gap-2">
                             {row.isBase && <Badge className="bg-blue-500 text-[10px] h-4 px-1 py-0">Base</Badge>}
                             {row.isTarget && <Badge className="bg-amber-500 text-black text-[10px] h-4 px-1 py-0 font-bold">Goal</Badge>}
-                            {row.isHistorical && <Badge variant="outline" className="text-[10px] h-4 px-1 py-0 text-muted-foreground border-white/10">Past</Badge>}
+                            {row.isHistorical && <Badge variant="outline" className="text-[10px] h-4 px-1 py-0 text-muted-foreground border-white/10">Historical</Badge>}
                             <span>{row.month}</span>
                           </td>
                           <td className="py-2.5 px-3 text-right font-medium text-amber-300">
-                            {hasTarget ? `${row.targetMn.toFixed(2)} M` : <span className="text-muted-foreground/50 italic">—</span>}
+                            {row.targetMn.toFixed(2)} M
                           </td>
                           <td className="py-2.5 px-3 text-right text-muted-foreground">
-                            {hasTarget ? `${row.target.toLocaleString()} LKR` : <span className="text-muted-foreground/50 italic">—</span>}
+                            {row.target.toLocaleString()} LKR
                           </td>
                           <td className="py-2.5 px-3 text-right font-bold">
                             {isRecorded ? (
@@ -618,9 +623,7 @@ export function TargetVsActualChart({ sortedMonths, getMonthTotal }: TargetVsAct
                                 {row.variancePct.toFixed(1)}%)
                               </span>
                             ) : (
-                              <span className="text-muted-foreground/40 italic">
-                                {isRecorded ? "Historical" : "Projected"}
-                              </span>
+                              <span className="text-muted-foreground/40 italic">Projected</span>
                             )}
                           </td>
                           <td className="py-2.5 px-3 text-right text-muted-foreground font-mono">
@@ -628,21 +631,15 @@ export function TargetVsActualChart({ sortedMonths, getMonthTotal }: TargetVsAct
                           </td>
                           <td className="py-2.5 px-3 text-center">
                             {isRecorded ? (
-                              row.variance !== null ? (
-                                <Badge
-                                  className={`text-[10px] h-5 px-1.5 font-bold ${
-                                    isAhead
-                                      ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/30"
-                                      : "bg-red-500/20 text-red-300 border-red-500/30"
-                                  }`}
-                                >
-                                  {isAhead ? "AHEAD" : "BEHIND"}
-                                </Badge>
-                              ) : (
-                                <Badge variant="outline" className="text-[10px] h-5 px-1.5 text-blue-300 border-blue-500/30 bg-blue-500/10">
-                                  RECORDED
-                                </Badge>
-                              )
+                              <Badge
+                                className={`text-[10px] h-5 px-1.5 font-bold ${
+                                  isAhead
+                                    ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/30"
+                                    : "bg-red-500/20 text-red-300 border-red-500/30"
+                                }`}
+                              >
+                                {isAhead ? "AHEAD" : "BEHIND"}
+                              </Badge>
                             ) : (
                               <Badge variant="outline" className="text-[10px] h-5 px-1.5 text-muted-foreground border-white/10">
                                 UPCOMING
@@ -680,7 +677,7 @@ function CustomTargetTooltip({ active, payload, label }: any) {
         <span>{label}</span>
         {data.isBase && <span className="text-[10px] text-blue-400 font-normal">Base Month (10/2026)</span>}
         {data.isTarget && <span className="text-[10px] text-amber-400 font-normal">Target Milestone (12/2029)</span>}
-        {data.isHistorical && <span className="text-[10px] text-muted-foreground font-normal">Pre-Base History</span>}
+        {data.isHistorical && <span className="text-[10px] text-amber-300/80 font-normal">Linear Back-Projected</span>}
       </div>
 
       {hasActual && (
@@ -725,12 +722,6 @@ function CustomTargetTooltip({ active, payload, label }: any) {
       {!hasActual && hasTarget && (
         <div className="border-t border-white/10 pt-1 text-[11px] text-muted-foreground italic">
           Future Projected Milestone
-        </div>
-      )}
-
-      {hasActual && !hasTarget && (
-        <div className="border-t border-white/10 pt-1 text-[11px] text-blue-300/80 italic">
-          Historical Wealth (Pre-Target Base)
         </div>
       )}
     </div>
