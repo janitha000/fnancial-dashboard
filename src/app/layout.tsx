@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Outfit, JetBrains_Mono } from "next/font/google";
+import { IBM_Plex_Sans, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 import { Navbar } from "@/components/layout/Navbar";
 import { FinanceProvider } from "@/context/FinanceContext";
@@ -12,12 +12,14 @@ import { StocksProvider } from "@/context/StocksContext";
 import { checkAuth } from "@/actions/auth";
 import { LockScreen } from "@/components/auth/LockScreen";
 
-const outfit = Outfit({
+const ibmPlexSans = IBM_Plex_Sans({
+  weight: ["400", "500", "600", "700"],
   variable: "--font-sans",
   subsets: ["latin"],
 });
 
-const jetbrainsMono = JetBrains_Mono({
+const ibmPlexMono = IBM_Plex_Mono({
+  weight: ["400", "500", "600"],
   variable: "--font-mono",
   subsets: ["latin"],
 });
@@ -36,11 +38,18 @@ export default async function RootLayout({
   return (
     <html
       lang="en"
-      className={`${outfit.variable} ${jetbrainsMono.variable} h-full antialiased dark`}
+      className={`${ibmPlexSans.variable} ${ibmPlexMono.variable} h-full antialiased dark`}
     >
-      <body className="min-h-full flex flex-col bg-background text-foreground antialiased selection:bg-primary/30">
-        {/* Glow effect isolated in background string */}
-        <div className="fixed inset-0 z-[-1] bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(120,119,198,0.3),rgba(255,255,255,0))]"></div>
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap"
+          rel="stylesheet"
+        />
+      </head>
+      <body className="min-h-full flex flex-col bg-[#14171c] text-[#f1f5f9] antialiased selection:bg-[#38bdf8]/30">
+        <div className="fixed inset-0 z-[-1] bg-[#14171c] pointer-events-none"></div>
         {isAuthenticated ? (
           <FinanceProvider>
             <WealthProvider>
@@ -50,7 +59,7 @@ export default async function RootLayout({
                       <StocksProvider>
                         <ExpenseProvider>
                           <Navbar />
-                          <main className="flex-1 p-4 md:p-6 md:p-8 max-w-7xl mx-auto w-full relative z-10 [&_.bg-card]:backdrop-blur-xl [&_.bg-card]:shadow-2xl [&_.bg-card]:shadow-black/20 [&_.bg-card]:border-white/10">
+                          <main className="flex-1 p-4 md:p-6 md:p-8 max-w-7xl mx-auto w-full relative z-10">
                             {children}
                           </main>
                         </ExpenseProvider>

@@ -11,7 +11,7 @@ import { TargetVsActualChart } from "@/components/wealth/TargetVsActualChart";
 import { PieChart, Pie, Cell, LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { Trash2, TrendingUp, TrendingDown, PieChart as PieIcon, Table as TableIcon, ChevronLeft, ChevronRight, LineChart as LineChartIcon, Sparkles } from "lucide-react";
 
-const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16', '#ef4444', '#14b8a6', '#6366f1'];
+const COLORS = ["#38bdf8", "#22c55e", "#eab308", "#94a3b8", "#ef4444", "#64748b", "#38bdf8", "#22c55e"];
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const YEARS = [
   "2024", "2025", "2026", "2027", "2028", "2029", "2030",
@@ -24,7 +24,7 @@ const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, per
   const x = cx + radius * Math.cos(-midAngle * Math.PI / 180);
   const y = cy + radius * Math.sin(-midAngle * Math.PI / 180);
   return (
-    <text x={x} y={y} fill="white" textAnchor="middle" dominantBaseline="central" fontSize="13px" fontWeight="bold">
+    <text x={x} y={y} fill="#f1f5f9" textAnchor="middle" dominantBaseline="central" fontSize="12px" fontWeight="bold" fontFamily="'IBM Plex Mono', monospace">
       {`${(percent * 100).toFixed(0)}%`}
     </text>
   );
@@ -34,7 +34,7 @@ const renderGainLossDot = (props: any) => {
   const { cx, cy, payload } = props;
   const isGain = payload["Gain/Loss"] >= 0;
   return (
-    <circle cx={cx} cy={cy} r={5} stroke="#1e293b" strokeWidth={2} fill={isGain ? '#10b981' : '#ef4444'} />
+    <circle cx={cx} cy={cy} r={4} stroke="#14171c" strokeWidth={1.5} fill={isGain ? '#22c55e' : '#ef4444'} />
   );
 };
 
@@ -472,29 +472,29 @@ export default function WealthPage() {
                     <div className="h-[300px]">
                       <ResponsiveContainer width="100%" height="100%">
                         <LineChart data={fyTrendData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.1)" />
-                          <XAxis dataKey="month" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
-                          <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(val) => `${(val/1000000).toFixed(1)}M`} domain={['auto', 'auto']} />
-                          <Tooltip formatter={(val: any) => val.toLocaleString() + ' LKR'} contentStyle={{backgroundColor: 'rgba(15,23,42,0.9)', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px', backdropFilter: 'blur(8px)'}} />
-                          <Line type="monotone" dataKey="Total Assets" stroke="#3b82f6" strokeWidth={4} activeDot={{ r: 8 }} />
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
+                          <XAxis dataKey="month" stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} style={{ fontFamily: "'IBM Plex Mono', monospace" }} />
+                          <YAxis stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(val) => `${(val/1000000).toFixed(1)}M`} domain={['auto', 'auto']} style={{ fontFamily: "'IBM Plex Mono', monospace" }} />
+                          <Tooltip formatter={(val: any) => val.toLocaleString() + ' LKR'} contentStyle={{backgroundColor: '#242932', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px', color: '#f1f5f9', fontFamily: "'IBM Plex Mono', monospace"}} />
+                          <Line type="monotone" dataKey="Total Assets" stroke="#38bdf8" strokeWidth={3} activeDot={{ r: 6, fill: "#38bdf8", stroke: "#14171c" }} />
                         </LineChart>
                       </ResponsiveContainer>
                     </div>
                   </CardContent>
                 </Card>
 
-                <Card className="lg:col-span-2 bg-white/5 border-white/10">
-                  <CardHeader><CardTitle className="flex items-center gap-2"><LineChartIcon className="w-5 h-5 text-indigo-400" /> Net Worth Over Time (Capital Stack)</CardTitle></CardHeader>
+                <Card className="lg:col-span-2 bg-[#1c2026] border-[rgba(255,255,255,0.07)] rounded-[10px] shadow-none">
+                  <CardHeader><CardTitle className="flex items-center gap-2 text-[#f1f5f9]"><LineChartIcon className="w-5 h-5 text-[#38bdf8]" /> Net Worth Over Time (Capital Stack)</CardTitle></CardHeader>
                   <CardContent>
                     <div className="h-[300px]">
                       <ResponsiveContainer width="100%" height="100%">
                         <AreaChart data={fyStackedAreaData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.1)" />
-                          <XAxis dataKey="month" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
-                          <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(val) => `${(val/1000000).toFixed(1)}M`} domain={['auto', 'auto']} />
-                          <Tooltip formatter={(val: any) => val.toLocaleString() + ' LKR'} contentStyle={{backgroundColor: 'rgba(15,23,42,0.9)', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px', backdropFilter: 'blur(8px)'}} />
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
+                          <XAxis dataKey="month" stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} style={{ fontFamily: "'IBM Plex Mono', monospace" }} />
+                          <YAxis stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(val) => `${(val/1000000).toFixed(1)}M`} domain={['auto', 'auto']} style={{ fontFamily: "'IBM Plex Mono', monospace" }} />
+                          <Tooltip formatter={(val: any) => val.toLocaleString() + ' LKR'} contentStyle={{backgroundColor: '#242932', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px', color: '#f1f5f9', fontFamily: "'IBM Plex Mono', monospace"}} />
                           {fyCategories.map((cat, idx) => (
-                            <Area key={cat} type="monotone" dataKey={cat} stackId="1" stroke={COLORS[idx % COLORS.length]} fill={COLORS[idx % COLORS.length]} fillOpacity={0.6} activeDot={{ r: 6 }} />
+                            <Area key={cat} type="monotone" dataKey={cat} stackId="1" stroke={COLORS[idx % COLORS.length]} fill={COLORS[idx % COLORS.length]} fillOpacity={0.6} activeDot={{ r: 5 }} />
                           ))}
                         </AreaChart>
                       </ResponsiveContainer>
@@ -502,17 +502,17 @@ export default function WealthPage() {
                   </CardContent>
                 </Card>
 
-                <Card className="lg:col-span-2 bg-white/5 border-white/10">
-                  <CardHeader><CardTitle className="flex items-center gap-2"><TrendingUp className="w-5 h-5 text-emerald-400" /> Monthly Absolute Gain/Loss</CardTitle></CardHeader>
+                <Card className="lg:col-span-2 bg-[#1c2026] border-[rgba(255,255,255,0.07)] rounded-[10px] shadow-none">
+                  <CardHeader><CardTitle className="flex items-center gap-2 text-[#f1f5f9]"><TrendingUp className="w-5 h-5 text-[#22c55e]" /> Monthly Absolute Gain/Loss</CardTitle></CardHeader>
                   <CardContent>
                     <div className="h-[250px]">
                       <ResponsiveContainer width="100%" height="100%">
                         <LineChart data={fyGainLossData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.1)" />
-                          <XAxis dataKey="month" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
-                          <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(val) => `${(val/1000000).toFixed(1)}M`} domain={['auto', 'auto']} />
-                          <Tooltip formatter={(val: any) => val.toLocaleString() + ' LKR'} contentStyle={{backgroundColor: 'rgba(15,23,42,0.9)', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px', backdropFilter: 'blur(8px)'}} />
-                          <Line type="monotone" dataKey="Gain/Loss" stroke="rgba(255,255,255,0.2)" strokeWidth={2} dot={renderGainLossDot} activeDot={{ r: 8, fill: '#fff', strokeWidth: 0 }} />
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
+                          <XAxis dataKey="month" stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} style={{ fontFamily: "'IBM Plex Mono', monospace" }} />
+                          <YAxis stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(val) => `${(val/1000000).toFixed(1)}M`} domain={['auto', 'auto']} style={{ fontFamily: "'IBM Plex Mono', monospace" }} />
+                          <Tooltip formatter={(val: any) => val.toLocaleString() + ' LKR'} contentStyle={{backgroundColor: '#242932', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px', color: '#f1f5f9', fontFamily: "'IBM Plex Mono', monospace"}} />
+                          <Line type="monotone" dataKey="Gain/Loss" stroke="rgba(255,255,255,0.15)" strokeWidth={2} dot={renderGainLossDot} activeDot={{ r: 6, fill: '#f1f5f9', strokeWidth: 0 }} />
                         </LineChart>
                       </ResponsiveContainer>
                     </div>
@@ -579,33 +579,33 @@ export default function WealthPage() {
 
           <TabsContent value="full" className="mt-6 space-y-6">
             <div className="grid gap-6">
-              <Card className="bg-white/5 border-white/10">
-                <CardHeader><CardTitle className="flex items-center gap-2"><LineChartIcon className="w-5 h-5 text-blue-400" /> All-Time Assets Trend</CardTitle></CardHeader>
+              <Card className="bg-[#1c2026] border-[rgba(255,255,255,0.07)] rounded-[10px] shadow-none">
+                <CardHeader><CardTitle className="flex items-center gap-2 text-[#f1f5f9]"><LineChartIcon className="w-5 h-5 text-[#38bdf8]" /> All-Time Assets Trend</CardTitle></CardHeader>
                 <CardContent>
                   <div className="h-[400px]">
                     <ResponsiveContainer width="100%" height="100%">
                       <LineChart data={fullTrendData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.1)" />
-                        <XAxis dataKey="month" stroke="#888888" fontSize={11} tickLine={false} axisLine={false} />
-                        <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(val) => `${(val/1000000).toFixed(1)}M`} domain={['auto', 'auto']} />
-                        <Tooltip formatter={(val: any) => val.toLocaleString() + ' LKR'} contentStyle={{backgroundColor: 'rgba(15,23,42,0.9)', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px', backdropFilter: 'blur(8px)'}} />
-                        <Line type="monotone" dataKey="Total Assets" stroke="#3b82f6" strokeWidth={4} dot={{ r: 4, fill: '#3b82f6' }} activeDot={{ r: 8 }} />
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
+                        <XAxis dataKey="month" stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} style={{ fontFamily: "'IBM Plex Mono', monospace" }} />
+                        <YAxis stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(val) => `${(val/1000000).toFixed(1)}M`} domain={['auto', 'auto']} style={{ fontFamily: "'IBM Plex Mono', monospace" }} />
+                        <Tooltip formatter={(val: any) => val.toLocaleString() + ' LKR'} contentStyle={{backgroundColor: '#242932', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px', color: '#f1f5f9', fontFamily: "'IBM Plex Mono', monospace"}} />
+                        <Line type="monotone" dataKey="Total Assets" stroke="#38bdf8" strokeWidth={3} dot={{ r: 3, fill: '#38bdf8' }} activeDot={{ r: 6, fill: "#38bdf8", stroke: "#14171c" }} />
                       </LineChart>
                     </ResponsiveContainer>
                   </div>
                 </CardContent>
               </Card>
 
-              <Card className="bg-white/5 border-white/10">
-                <CardHeader><CardTitle className="flex items-center gap-2"><LineChartIcon className="w-5 h-5 text-indigo-400" /> Capital Stack Evolution (Full Portfolio)</CardTitle></CardHeader>
+              <Card className="bg-[#1c2026] border-[rgba(255,255,255,0.07)] rounded-[10px] shadow-none">
+                <CardHeader><CardTitle className="flex items-center gap-2 text-[#f1f5f9]"><LineChartIcon className="w-5 h-5 text-[#38bdf8]" /> Capital Stack Evolution (Full Portfolio)</CardTitle></CardHeader>
                 <CardContent>
                   <div className="h-[400px]">
                     <ResponsiveContainer width="100%" height="100%">
                       <AreaChart data={fullStackedAreaData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.1)" />
-                        <XAxis dataKey="month" stroke="#888888" fontSize={11} tickLine={false} axisLine={false} />
-                        <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(val) => `${(val/1000000).toFixed(1)}M`} domain={['auto', 'auto']} />
-                        <Tooltip formatter={(val: any) => val.toLocaleString() + ' LKR'} contentStyle={{backgroundColor: 'rgba(15,23,42,0.9)', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px', backdropFilter: 'blur(8px)'}} />
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
+                        <XAxis dataKey="month" stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} style={{ fontFamily: "'IBM Plex Mono', monospace" }} />
+                        <YAxis stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(val) => `${(val/1000000).toFixed(1)}M`} domain={['auto', 'auto']} style={{ fontFamily: "'IBM Plex Mono', monospace" }} />
+                        <Tooltip formatter={(val: any) => val.toLocaleString() + ' LKR'} contentStyle={{backgroundColor: '#242932', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px', color: '#f1f5f9', fontFamily: "'IBM Plex Mono', monospace"}} />
                         {fullCategories.map((cat, idx) => (
                           <Area key={cat} type="monotone" dataKey={cat} stackId="1" stroke={COLORS[idx % COLORS.length]} fill={COLORS[idx % COLORS.length]} fillOpacity={0.6} />
                         ))}
@@ -615,17 +615,17 @@ export default function WealthPage() {
                 </CardContent>
               </Card>
 
-              <Card className="bg-white/5 border-white/10">
-                <CardHeader><CardTitle className="flex items-center gap-2"><TrendingUp className="w-5 h-5 text-emerald-400" /> All-Time Monthly Gain/Loss</CardTitle></CardHeader>
+              <Card className="bg-[#1c2026] border-[rgba(255,255,255,0.07)] rounded-[10px] shadow-none">
+                <CardHeader><CardTitle className="flex items-center gap-2 text-[#f1f5f9]"><TrendingUp className="w-5 h-5 text-[#22c55e]" /> All-Time Monthly Gain/Loss</CardTitle></CardHeader>
                 <CardContent>
                   <div className="h-[300px]">
                     <ResponsiveContainer width="100%" height="100%">
                       <LineChart data={fullGainLossData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.1)" />
-                        <XAxis dataKey="month" stroke="#888888" fontSize={11} tickLine={false} axisLine={false} />
-                        <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(val) => `${(val/1000000).toFixed(1)}M`} domain={['auto', 'auto']} />
-                        <Tooltip formatter={(val: any) => val.toLocaleString() + ' LKR'} contentStyle={{backgroundColor: 'rgba(15,23,42,0.9)', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px', backdropFilter: 'blur(8px)'}} />
-                        <Line type="monotone" dataKey="Gain/Loss" stroke="rgba(255,255,255,0.2)" strokeWidth={2} dot={renderGainLossDot} activeDot={{ r: 8, fill: '#fff', strokeWidth: 0 }} />
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
+                        <XAxis dataKey="month" stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} style={{ fontFamily: "'IBM Plex Mono', monospace" }} />
+                        <YAxis stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(val) => `${(val/1000000).toFixed(1)}M`} domain={['auto', 'auto']} style={{ fontFamily: "'IBM Plex Mono', monospace" }} />
+                        <Tooltip formatter={(val: any) => val.toLocaleString() + ' LKR'} contentStyle={{backgroundColor: '#242932', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px', color: '#f1f5f9', fontFamily: "'IBM Plex Mono', monospace"}} />
+                        <Line type="monotone" dataKey="Gain/Loss" stroke="rgba(255,255,255,0.15)" strokeWidth={2} dot={renderGainLossDot} activeDot={{ r: 6, fill: '#f1f5f9', strokeWidth: 0 }} />
                       </LineChart>
                     </ResponsiveContainer>
                   </div>

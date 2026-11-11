@@ -52,11 +52,11 @@ export function ExpenseDashboard() {
 
   // Colors for categories
   const COLORS: Record<string, string> = {
-    Household: "#6366f1", // Indigo
-    Vehicle: "#f59e0b",   // Amber
-    Loan: "#10b981",      // Emerald
-    OD: "#ef4444",        // Red
-    Tax: "#a855f7",       // Purple
+    Household: "#38bdf8", // Ice Blue
+    Vehicle: "#eab308",   // Champagne Ochre
+    Loan: "#22c55e",      // Sage Green
+    OD: "#ef4444",        // Terracotta Red
+    Tax: "#94a3b8",       // Slate
   };
 
   const handlePrevMonth = () => {
@@ -269,7 +269,7 @@ export function ExpenseDashboard() {
                       ))}
                     </Pie>
                     <Tooltip 
-                      contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', borderRadius: '12px', backdropFilter: 'blur(10px)' }}
+                      contentStyle={{ backgroundColor: '#242932', borderColor: 'rgba(255, 255, 255, 0.1)', borderRadius: '8px', color: '#f1f5f9', fontFamily: "'IBM Plex Mono', monospace" }}
                       formatter={(value: any) => value?.toLocaleString() || "0"}
                     />
                   </PieChart>
@@ -277,15 +277,15 @@ export function ExpenseDashboard() {
             ) : (
                 <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={fyExpenses} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-white/5" />
-                        <XAxis dataKey="month" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
-                        <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(val) => `${(val/1000).toFixed(0)}k`} />
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255, 255, 255, 0.05)" />
+                        <XAxis dataKey="month" stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} style={{ fontFamily: "'IBM Plex Mono', monospace" }} />
+                        <YAxis stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(val) => `${(val/1000).toFixed(0)}k`} style={{ fontFamily: "'IBM Plex Mono', monospace" }} />
                         <Tooltip 
-                            cursor={{ fill: 'rgba(255,255,255,0.05)' }}
-                            contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', borderRadius: '12px' }}
+                            cursor={{ fill: 'rgba(255,255,255,0.04)' }}
+                            contentStyle={{ backgroundColor: '#242932', borderColor: 'rgba(255, 255, 255, 0.1)', borderRadius: '8px', color: '#f1f5f9', fontFamily: "'IBM Plex Mono', monospace" }}
                             formatter={(val: any) => val?.toLocaleString() || "0"}
                         />
-                        <Legend iconType="circle" />
+                        <Legend iconType="circle" wrapperStyle={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: "11px", color: "#94a3b8" }} />
                         {Object.keys(COLORS).map((category) => (
                             <Bar 
                               key={category} 

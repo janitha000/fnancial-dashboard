@@ -93,84 +93,84 @@ export function OverdraftLoanCard({ loan }: { loan: OverdraftLoan }) {
   };
 
   const inputClass =
-    "w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/60 transition";
-  const labelClass = "block text-xs text-muted-foreground mb-1 uppercase tracking-wide";
+    "w-full bg-[#14171c] border border-[rgba(255,255,255,0.07)] rounded-[8px] px-3 py-2 text-sm text-[#f1f5f9] placeholder:text-[#64748b] focus:outline-none focus:ring-1 focus:ring-[#38bdf8] font-mono transition";
+  const labelClass = "block text-xs text-[#94a3b8] mb-1 uppercase tracking-wide font-medium";
 
   const isNearLimit = metrics.percentUsed >= 90;
 
   const formConfig = {
     draw: {
       label: "Withdraw / Draw",
-      icon: <ArrowDownLeft className="h-4 w-4 text-red-400" />,
-      color: "text-red-400",
-      border: "border-red-500/20 bg-red-500/5",
-      btn: "bg-red-500/80 hover:bg-red-500",
+      icon: <ArrowDownLeft className="h-4 w-4 text-[#ef4444]" />,
+      color: "text-[#ef4444]",
+      border: "border-[rgba(239,68,68,0.2)] bg-[rgba(239,68,68,0.06)]",
+      btn: "bg-[#ef4444] hover:bg-[#ef4444]/90 text-[#f1f5f9]",
       confirmLabel: "Confirm Draw",
     },
     settle: {
       label: "Settle Amount",
-      icon: <ArrowUpRight className="h-4 w-4 text-green-400" />,
-      color: "text-green-400",
-      border: "border-green-500/20 bg-green-500/5",
-      btn: "bg-green-500/80 hover:bg-green-500",
+      icon: <ArrowUpRight className="h-4 w-4 text-[#22c55e]" />,
+      color: "text-[#22c55e]",
+      border: "border-[rgba(34,197,94,0.2)] bg-[rgba(34,197,94,0.06)]",
+      btn: "bg-[#22c55e] hover:bg-[#22c55e]/90 text-[#0f172a]",
       confirmLabel: "Confirm Settlement",
     },
     interest: {
       label: "Interest Accrued",
-      icon: <TrendingUp className="h-4 w-4 text-yellow-400" />,
-      color: "text-yellow-400",
-      border: "border-yellow-500/20 bg-yellow-500/5",
-      btn: "bg-yellow-500/80 hover:bg-yellow-500",
+      icon: <TrendingUp className="h-4 w-4 text-[#eab308]" />,
+      color: "text-[#eab308]",
+      border: "border-[rgba(234,179,8,0.2)] bg-[rgba(234,179,8,0.06)]",
+      btn: "bg-[#eab308] hover:bg-[#eab308]/90 text-[#0f172a]",
       confirmLabel: "Record Interest",
     },
   };
 
   const timelineStyle = {
     draw: {
-      bg: "bg-red-500/15",
-      icon: <ArrowDownLeft className="h-3 w-3 text-red-400" />,
+      bg: "bg-[rgba(239,68,68,0.12)]",
+      icon: <ArrowDownLeft className="h-3 w-3 text-[#ef4444]" />,
       label: "Draw",
-      color: "text-red-400",
+      color: "text-[#ef4444]",
       sign: "−",
     },
     settle: {
-      bg: "bg-green-500/15",
-      icon: <ArrowUpRight className="h-3 w-3 text-green-400" />,
+      bg: "bg-[rgba(34,197,94,0.12)]",
+      icon: <ArrowUpRight className="h-3 w-3 text-[#22c55e]" />,
       label: "Settlement",
-      color: "text-green-400",
+      color: "text-[#22c55e]",
       sign: "+",
     },
     interest: {
-      bg: "bg-yellow-500/15",
-      icon: <TrendingUp className="h-3 w-3 text-yellow-400" />,
+      bg: "bg-[rgba(234,179,8,0.12)]",
+      icon: <TrendingUp className="h-3 w-3 text-[#eab308]" />,
       label: "Interest",
-      color: "text-yellow-400",
+      color: "text-[#eab308]",
       sign: "",
     },
   };
 
   return (
     <div
-      className={`rounded-2xl border bg-white/5 backdrop-blur-xl overflow-hidden transition-all duration-200 ${
+      className={`rounded-[10px] border bg-[#1c2026] overflow-hidden transition-all duration-200 ${
         isNearLimit
-          ? "border-red-500/30"
-          : "border-orange-500/20 hover:border-orange-500/30"
+          ? "border-[rgba(239,68,68,0.3)]"
+          : "border-[rgba(255,255,255,0.07)] hover:border-[rgba(255,255,255,0.15)]"
       }`}
     >
       <div className="p-5">
         {/* Header */}
         <div className="flex items-start justify-between gap-3 mb-5">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-orange-500/15">
-              <CreditCard className="h-5 w-5 text-orange-400" />
+            <div className="p-2.5 rounded-[8px] bg-[#242932]">
+              <CreditCard className="h-5 w-5 text-[#38bdf8]" />
             </div>
             <div>
-              <h3 className="font-semibold text-foreground text-sm leading-tight">
+              <h3 className="font-semibold text-[#f1f5f9] text-sm leading-tight">
                 {loan.name}
               </h3>
-              <p className="text-xs text-muted-foreground mt-0.5">
+              <p className="text-xs text-[#94a3b8] mt-0.5 font-mono">
                 Since {fmtDate(loan.startDate)} · OD Limit:{" "}
-                <span className="text-orange-400 font-medium">
+                <span className="text-[#38bdf8] font-medium">
                   {fmt(loan.overdraftLimit)}
                 </span>
               </p>
@@ -178,7 +178,7 @@ export function OverdraftLoanCard({ loan }: { loan: OverdraftLoan }) {
           </div>
           <div className="flex items-center gap-2 shrink-0">
             {isNearLimit && (
-              <span className="px-2.5 py-1 rounded-full bg-red-500/15 text-red-400 text-xs font-medium">
+              <span className="px-2.5 py-1 rounded-[6px] bg-[rgba(239,68,68,0.12)] text-[#ef4444] border border-[rgba(239,68,68,0.2)] text-xs font-mono font-medium">
                 Near Limit
               </span>
             )}
@@ -186,13 +186,13 @@ export function OverdraftLoanCard({ loan }: { loan: OverdraftLoan }) {
               <div className="flex gap-1">
                 <button
                   onClick={() => setConfirmDeleteLoan(false)}
-                  className="px-2 py-1 rounded-lg text-xs border border-white/10 text-muted-foreground hover:bg-white/10 transition"
+                  className="px-2 py-1 rounded-md text-xs border border-[rgba(255,255,255,0.07)] text-[#94a3b8] hover:bg-[#242932] transition"
                 >
                   No
                 </button>
                 <button
                   onClick={handleDeleteLoan}
-                  className="px-2 py-1 rounded-lg text-xs bg-red-500/20 border border-red-500/30 text-red-400 hover:bg-red-500/30 transition"
+                  className="px-2 py-1 rounded-md text-xs bg-[rgba(239,68,68,0.12)] border border-[rgba(239,68,68,0.2)] text-[#ef4444] hover:bg-[rgba(239,68,68,0.2)] transition"
                 >
                   Delete
                 </button>
@@ -200,7 +200,7 @@ export function OverdraftLoanCard({ loan }: { loan: OverdraftLoan }) {
             ) : (
               <button
                 onClick={handleDeleteLoan}
-                className="p-1.5 rounded-lg text-muted-foreground hover:text-red-400 hover:bg-red-500/10 transition"
+                className="p-1.5 rounded-md text-[#94a3b8] hover:text-[#ef4444] hover:bg-[rgba(239,68,68,0.12)] transition"
               >
                 <Trash2 className="h-4 w-4" />
               </button>
@@ -210,21 +210,21 @@ export function OverdraftLoanCard({ loan }: { loan: OverdraftLoan }) {
 
         {/* Key metrics */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
-          <div className="rounded-xl bg-white/5 p-3">
-            <p className="text-xs text-muted-foreground mb-1">OD Limit</p>
-            <p className="text-sm font-semibold text-foreground">{fmt(loan.overdraftLimit)}</p>
+          <div className="rounded-[8px] bg-[#14171c] border border-[rgba(255,255,255,0.04)] p-3">
+            <p className="text-xs text-[#94a3b8] mb-1">OD Limit</p>
+            <p className="text-sm font-semibold text-[#f1f5f9] font-mono [font-feature-settings:'tnum']">{fmt(loan.overdraftLimit)}</p>
           </div>
-          <div className="rounded-xl bg-white/5 p-3">
-            <p className="text-xs text-muted-foreground mb-1">Total Drawn</p>
-            <p className="text-sm font-semibold text-red-400">{fmt(metrics.totalTaken)}</p>
+          <div className="rounded-[8px] bg-[#14171c] border border-[rgba(255,255,255,0.04)] p-3">
+            <p className="text-xs text-[#94a3b8] mb-1">Total Drawn</p>
+            <p className="text-sm font-semibold text-[#ef4444] font-mono [font-feature-settings:'tnum']">{fmt(metrics.totalTaken)}</p>
           </div>
-          <div className="rounded-xl bg-white/5 p-3">
-            <p className="text-xs text-muted-foreground mb-1">Total Settled</p>
-            <p className="text-sm font-semibold text-green-400">{fmt(metrics.totalSettled)}</p>
+          <div className="rounded-[8px] bg-[#14171c] border border-[rgba(255,255,255,0.04)] p-3">
+            <p className="text-xs text-[#94a3b8] mb-1">Total Settled</p>
+            <p className="text-sm font-semibold text-[#22c55e] font-mono [font-feature-settings:'tnum']">{fmt(metrics.totalSettled)}</p>
           </div>
-          <div className="rounded-xl bg-white/5 p-3">
-            <p className="text-xs text-muted-foreground mb-1">Outstanding</p>
-            <p className={`text-sm font-semibold ${metrics.outstanding > 0 ? "text-orange-400" : "text-green-400"}`}>
+          <div className="rounded-[8px] bg-[#14171c] border border-[rgba(255,255,255,0.04)] p-3">
+            <p className="text-xs text-[#94a3b8] mb-1">Outstanding</p>
+            <p className={`text-sm font-semibold font-mono [font-feature-settings:'tnum'] ${metrics.outstanding > 0 ? "text-[#eab308]" : "text-[#22c55e]"}`}>
               {fmt(metrics.outstanding)}
             </p>
           </div>
@@ -232,19 +232,19 @@ export function OverdraftLoanCard({ loan }: { loan: OverdraftLoan }) {
 
         {/* Interest accrued + remaining OD */}
         <div className="grid grid-cols-2 gap-3 mb-4">
-          <div className="rounded-xl bg-yellow-500/8 border border-yellow-500/15 p-3">
-            <p className="text-xs text-muted-foreground mb-1">Interest Accrued</p>
-            <p className="text-sm font-semibold text-yellow-400">{fmt(metrics.totalInterestAccrued)}</p>
+          <div className="rounded-[8px] bg-[rgba(234,179,8,0.08)] border border-[rgba(234,179,8,0.15)] p-3">
+            <p className="text-xs text-[#94a3b8] mb-1">Interest Accrued</p>
+            <p className="text-sm font-semibold text-[#eab308] font-mono [font-feature-settings:'tnum']">{fmt(metrics.totalInterestAccrued)}</p>
           </div>
           <div
-            className={`rounded-xl p-3 ${
+            className={`rounded-[8px] p-3 ${
               metrics.remainingODAvailable <= 0
-                ? "bg-red-500/10 border border-red-500/20"
-                : "bg-green-500/10 border border-green-500/15"
+                ? "bg-[rgba(239,68,68,0.1)] border border-[rgba(239,68,68,0.2)]"
+                : "bg-[rgba(34,197,94,0.1)] border border-[rgba(34,197,94,0.15)]"
             }`}
           >
-            <p className="text-xs text-muted-foreground mb-1">Remaining OD Available</p>
-            <p className={`text-sm font-semibold ${metrics.remainingODAvailable <= 0 ? "text-red-400" : "text-green-400"}`}>
+            <p className="text-xs text-[#94a3b8] mb-1">Remaining OD Available</p>
+            <p className={`text-sm font-semibold font-mono [font-feature-settings:'tnum'] ${metrics.remainingODAvailable <= 0 ? "text-[#ef4444]" : "text-[#22c55e]"}`}>
               {fmt(metrics.remainingODAvailable)}
             </p>
           </div>
@@ -252,21 +252,21 @@ export function OverdraftLoanCard({ loan }: { loan: OverdraftLoan }) {
 
         {/* OD utilization bar */}
         <div className="mb-5">
-          <div className="flex justify-between text-xs text-muted-foreground mb-1.5">
+          <div className="flex justify-between text-xs text-[#94a3b8] mb-1.5 font-mono">
             <span>OD Utilization</span>
-            <span className={metrics.percentUsed >= 90 ? "text-red-400" : metrics.percentUsed >= 70 ? "text-orange-400" : "text-muted-foreground"}>
+            <span className={metrics.percentUsed >= 90 ? "text-[#ef4444]" : metrics.percentUsed >= 70 ? "text-[#eab308]" : "text-[#94a3b8]"}>
               {metrics.percentUsed.toFixed(1)}%
             </span>
           </div>
-          <div className="h-2 rounded-full bg-white/10 overflow-hidden">
+          <div className="h-2 rounded-full bg-[rgba(255,255,255,0.07)] overflow-hidden">
             <div
               className={`h-full rounded-full transition-all duration-500 ${
-                metrics.percentUsed >= 90 ? "bg-red-400" : metrics.percentUsed >= 70 ? "bg-orange-400" : "bg-green-400"
+                metrics.percentUsed >= 90 ? "bg-[#ef4444]" : metrics.percentUsed >= 70 ? "bg-[#eab308]" : "bg-[#22c55e]"
               }`}
               style={{ width: `${metrics.percentUsed}%` }}
             />
           </div>
-          <div className="flex justify-between text-xs text-muted-foreground mt-1.5">
+          <div className="flex justify-between text-xs text-[#94a3b8] mt-1.5 font-mono">
             <span>Outstanding: {fmt(metrics.outstanding)}</span>
             <span>Limit: {fmt(loan.overdraftLimit)}</span>
           </div>
@@ -278,7 +278,7 @@ export function OverdraftLoanCard({ loan }: { loan: OverdraftLoan }) {
             <button
               id={`od-draw-${loan.id}`}
               onClick={() => setActiveForm("draw")}
-              className="flex items-center gap-2 px-3 py-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 text-xs font-medium transition"
+              className="flex items-center gap-2 px-3 py-2 rounded-[8px] bg-[rgba(239,68,68,0.1)] hover:bg-[rgba(239,68,68,0.2)] border border-[rgba(239,68,68,0.2)] text-[#ef4444] text-xs font-medium transition"
             >
               <ArrowDownLeft className="h-3.5 w-3.5" />
               Withdraw / Draw
@@ -286,7 +286,7 @@ export function OverdraftLoanCard({ loan }: { loan: OverdraftLoan }) {
             <button
               id={`od-settle-${loan.id}`}
               onClick={() => setActiveForm("settle")}
-              className="flex items-center gap-2 px-3 py-2 rounded-xl bg-green-500/10 hover:bg-green-500/20 border border-green-500/20 text-green-400 text-xs font-medium transition"
+              className="flex items-center gap-2 px-3 py-2 rounded-[8px] bg-[rgba(34,197,94,0.1)] hover:bg-[rgba(34,197,94,0.2)] border border-[rgba(34,197,94,0.2)] text-[#22c55e] text-xs font-medium transition"
             >
               <ArrowUpRight className="h-3.5 w-3.5" />
               Settle
@@ -294,7 +294,7 @@ export function OverdraftLoanCard({ loan }: { loan: OverdraftLoan }) {
             <button
               id={`od-interest-${loan.id}`}
               onClick={() => setActiveForm("interest")}
-              className="flex items-center gap-2 px-3 py-2 rounded-xl bg-yellow-500/10 hover:bg-yellow-500/20 border border-yellow-500/20 text-yellow-400 text-xs font-medium transition"
+              className="flex items-center gap-2 px-3 py-2 rounded-[8px] bg-[rgba(234,179,8,0.1)] hover:bg-[rgba(234,179,8,0.2)] border border-[rgba(234,179,8,0.2)] text-[#eab308] text-xs font-medium transition"
             >
               <TrendingUp className="h-3.5 w-3.5" />
               Add Interest
@@ -341,14 +341,14 @@ export function OverdraftLoanCard({ loan }: { loan: OverdraftLoan }) {
                 <button
                   type="button"
                   onClick={() => { setActiveForm(null); setFormDate(""); setFormAmount(""); }}
-                  className="flex-1 py-2 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-xs text-muted-foreground transition"
+                  className="flex-1 py-2 rounded-[8px] border border-[rgba(255,255,255,0.07)] bg-transparent hover:bg-[#242932] text-xs text-[#94a3b8] transition"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={loading}
-                  className={`flex-1 py-2 rounded-xl text-xs font-semibold text-white transition disabled:opacity-50 ${formConfig[activeForm].btn}`}
+                  className={`flex-1 py-2 rounded-[8px] text-xs font-semibold transition disabled:opacity-50 ${formConfig[activeForm].btn}`}
                 >
                   {loading ? "Saving…" : formConfig[activeForm].confirmLabel}
                 </button>
@@ -360,7 +360,7 @@ export function OverdraftLoanCard({ loan }: { loan: OverdraftLoan }) {
         {/* Timeline */}
         {hasActivity && (
           <div>
-            <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2">
+            <p className="text-xs text-[#94a3b8] uppercase tracking-wide mb-2 font-medium">
               Transaction History
             </p>
             <div className="space-y-1.5">
@@ -369,26 +369,26 @@ export function OverdraftLoanCard({ loan }: { loan: OverdraftLoan }) {
                 return (
                   <div
                     key={item.id}
-                    className="flex items-center justify-between rounded-lg bg-white/5 px-3 py-2 group"
+                    className="flex items-center justify-between rounded-[8px] bg-[#14171c] border border-[rgba(255,255,255,0.04)] px-3 py-2 group"
                   >
                     <div className="flex items-center gap-3">
-                      <div className={`p-1 rounded-md ${style.bg}`}>{style.icon}</div>
+                      <div className={`p-1 rounded-[6px] ${style.bg}`}>{style.icon}</div>
                       <div>
                         <span className={`text-xs font-medium ${style.color}`}>
                           {style.label}
                         </span>
-                        <span className="text-xs text-muted-foreground ml-2">
+                        <span className="text-xs text-[#94a3b8] ml-2 font-mono">
                           {fmtDate(item.date)}
                         </span>
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className={`text-sm font-medium ${style.color}`}>
+                      <span className={`text-sm font-medium font-mono [font-feature-settings:'tnum'] ${style.color}`}>
                         {style.sign}{fmt(item.amount)}
                       </span>
                       <button
                         onClick={() => handleDeleteItem(item)}
-                        className="p-1 rounded text-muted-foreground opacity-0 group-hover:opacity-100 hover:text-red-400 hover:bg-red-500/10 transition"
+                        className="p-1 rounded text-[#94a3b8] opacity-0 group-hover:opacity-100 hover:text-[#ef4444] hover:bg-[rgba(239,68,68,0.12)] transition"
                       >
                         <X className="h-3 w-3" />
                       </button>

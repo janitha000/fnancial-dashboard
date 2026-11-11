@@ -352,10 +352,10 @@ export function TargetVsActualChart({ sortedMonths, getMonthTotal }: TargetVsAct
             <div className="flex items-center gap-2">
               <Badge
                 variant="outline"
-                className={`${
+                className={`font-mono text-xs font-semibold ${
                   currentVariance >= 0
-                    ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/30 font-bold"
-                    : "bg-red-500/20 text-red-300 border-red-500/30 font-bold"
+                    ? "bg-[rgba(34,197,94,0.12)] text-[#22c55e] border-[rgba(34,197,94,0.2)]"
+                    : "bg-[rgba(239,68,68,0.12)] text-[#ef4444] border-[rgba(239,68,68,0.2)]"
                 }`}
               >
                 {currentVariance >= 0 ? "ON TRACK" : "BEHIND TARGET"}
@@ -398,20 +398,20 @@ export function TargetVsActualChart({ sortedMonths, getMonthTotal }: TargetVsAct
             >
               <defs>
                 <linearGradient id="actualAreaGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
-                  <stop offset="95%" stopColor="#10b981" stopOpacity={0.0} />
+                  <stop offset="5%" stopColor="#38bdf8" stopOpacity={0.25} />
+                  <stop offset="95%" stopColor="#38bdf8" stopOpacity={0.0} />
                 </linearGradient>
                 <linearGradient id="targetAreaGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.15} />
-                  <stop offset="95%" stopColor="#f59e0b" stopOpacity={0.0} />
+                  <stop offset="5%" stopColor="#eab308" stopOpacity={0.15} />
+                  <stop offset="95%" stopColor="#eab308" stopOpacity={0.0} />
                 </linearGradient>
               </defs>
 
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.08)" />
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
 
               <XAxis
                 dataKey="month"
-                stroke="#888888"
+                stroke="#64748b"
                 fontSize={11}
                 tickLine={false}
                 axisLine={false}
@@ -419,15 +419,17 @@ export function TargetVsActualChart({ sortedMonths, getMonthTotal }: TargetVsAct
                 textAnchor="end"
                 height={55}
                 interval={scope === "full_timeline" ? 2 : 1}
+                style={{ fontFamily: "'IBM Plex Mono', monospace" }}
               />
 
               <YAxis
-                stroke="#888888"
+                stroke="#64748b"
                 fontSize={11}
                 tickLine={false}
                 axisLine={false}
                 domain={[30, 110]}
                 tickFormatter={(val) => `${val}M`}
+                style={{ fontFamily: "'IBM Plex Mono', monospace" }}
               />
 
               <Tooltip content={<CustomTargetTooltip />} />
@@ -437,36 +439,38 @@ export function TargetVsActualChart({ sortedMonths, getMonthTotal }: TargetVsAct
                 align="right"
                 height={36}
                 iconType="circle"
-                wrapperStyle={{ paddingBottom: "10px" }}
+                wrapperStyle={{ paddingBottom: "10px", fontFamily: "'IBM Plex Mono', monospace", fontSize: "11px", color: "#94a3b8" }}
               />
 
               {/* Reference line at 100Mn */}
               <ReferenceLine
                 y={100}
-                stroke="#f59e0b"
+                stroke="#eab308"
                 strokeDasharray="4 4"
                 strokeWidth={1.5}
                 label={{
                   value: "100 Mn Goal (Dec 2029)",
-                  fill: "#f59e0b",
+                  fill: "#eab308",
                   fontSize: 11,
                   position: "insideTopRight",
                   offset: 10,
+                  fontFamily: "'IBM Plex Mono', monospace",
                 }}
               />
 
               {/* Reference line at 59Mn Base */}
               <ReferenceLine
                 y={59}
-                stroke="#3b82f6"
+                stroke="#38bdf8"
                 strokeDasharray="4 4"
                 strokeWidth={1.5}
                 label={{
                   value: "59 Mn Base (Oct 2026)",
-                  fill: "#60a5fa",
+                  fill: "#38bdf8",
                   fontSize: 11,
                   position: "insideBottomLeft",
                   offset: 10,
+                  fontFamily: "'IBM Plex Mono', monospace",
                 }}
               />
 
@@ -484,10 +488,10 @@ export function TargetVsActualChart({ sortedMonths, getMonthTotal }: TargetVsAct
                 type="monotone"
                 dataKey="actualMn"
                 name="Actual Wealth"
-                stroke="#10b981"
-                strokeWidth={3.5}
-                dot={{ r: 3.5, fill: "#10b981", strokeWidth: 1.5, stroke: "#0f172a" }}
-                activeDot={{ r: 7, fill: "#10b981", strokeWidth: 2, stroke: "#fff" }}
+                stroke="#38bdf8"
+                strokeWidth={3}
+                dot={{ r: 3, fill: "#38bdf8", strokeWidth: 1.5, stroke: "#14171c" }}
+                activeDot={{ r: 6, fill: "#38bdf8", strokeWidth: 2, stroke: "#f1f5f9" }}
                 connectNulls={false}
               />
 
@@ -496,11 +500,11 @@ export function TargetVsActualChart({ sortedMonths, getMonthTotal }: TargetVsAct
                 type="monotone"
                 dataKey="targetMn"
                 name={`Predicted Target (${model === "linear" ? "Linear Back/Forward" : "CAGR"})`}
-                stroke="#f59e0b"
-                strokeWidth={2.5}
+                stroke="#eab308"
+                strokeWidth={2}
                 strokeDasharray="5 5"
-                dot={{ r: 2.5, fill: "#f59e0b", strokeWidth: 1, stroke: "#0f172a" }}
-                activeDot={{ r: 6, fill: "#f59e0b", strokeWidth: 2, stroke: "#fff" }}
+                dot={{ r: 2.5, fill: "#eab308", strokeWidth: 1, stroke: "#14171c" }}
+                activeDot={{ r: 5, fill: "#eab308", strokeWidth: 2, stroke: "#f1f5f9" }}
                 connectNulls={false}
               />
             </ComposedChart>
@@ -672,22 +676,22 @@ function CustomTargetTooltip({ active, payload, label }: any) {
   const isAhead = data.variance !== null && data.variance >= 0;
 
   return (
-    <div className="bg-slate-900/95 border border-white/20 p-3 rounded-xl shadow-2xl backdrop-blur-md min-w-[220px] text-xs space-y-2">
-      <div className="font-bold text-sm text-white border-b border-white/10 pb-1 flex items-center justify-between">
+    <div className="bg-[#242932] border border-[rgba(255,255,255,0.1)] p-3 rounded-[8px] shadow-xl min-w-[220px] text-xs space-y-2 font-mono [font-feature-settings:'tnum'] text-[#f1f5f9]">
+      <div className="font-semibold text-sm text-[#f1f5f9] border-b border-[rgba(255,255,255,0.07)] pb-1 flex items-center justify-between">
         <span>{label}</span>
-        {data.isBase && <span className="text-[10px] text-blue-400 font-normal">Base Month (10/2026)</span>}
-        {data.isTarget && <span className="text-[10px] text-amber-400 font-normal">Target Milestone (12/2029)</span>}
-        {data.isHistorical && <span className="text-[10px] text-amber-300/80 font-normal">Linear Back-Projected</span>}
+        {data.isBase && <span className="text-[10px] text-[#38bdf8] font-normal">Base Month (10/2026)</span>}
+        {data.isTarget && <span className="text-[10px] text-[#eab308] font-normal">Target Milestone (12/2029)</span>}
+        {data.isHistorical && <span className="text-[10px] text-[#94a3b8] font-normal">Linear Back-Projected</span>}
       </div>
 
       {hasActual && (
         <div className="flex items-center justify-between gap-4">
-          <span className="flex items-center gap-1.5 text-emerald-400 font-medium">
-            <span className="w-2 h-2 rounded-full bg-emerald-400" /> Actual Wealth:
+          <span className="flex items-center gap-1.5 text-[#38bdf8] font-medium">
+            <span className="w-2 h-2 rounded-full bg-[#38bdf8]" /> Actual Wealth:
           </span>
-          <span className="font-bold text-white text-right">
+          <span className="font-semibold text-[#f1f5f9] text-right">
             {(data.actual / 1_000_000).toFixed(2)} Mn LKR
-            <div className="text-[10px] font-normal text-muted-foreground">
+            <div className="text-[10px] font-normal text-[#94a3b8]">
               {data.actual.toLocaleString()} LKR
             </div>
           </span>
@@ -696,12 +700,12 @@ function CustomTargetTooltip({ active, payload, label }: any) {
 
       {hasTarget && (
         <div className="flex items-center justify-between gap-4">
-          <span className="flex items-center gap-1.5 text-amber-400 font-medium">
-            <span className="w-2 h-2 rounded-full bg-amber-400" /> Target Goal:
+          <span className="flex items-center gap-1.5 text-[#eab308] font-medium">
+            <span className="w-2 h-2 rounded-full bg-[#eab308]" /> Target Goal:
           </span>
-          <span className="font-bold text-amber-300 text-right">
+          <span className="font-semibold text-[#eab308] text-right">
             {(data.target / 1_000_000).toFixed(2)} Mn LKR
-            <div className="text-[10px] font-normal text-muted-foreground">
+            <div className="text-[10px] font-normal text-[#94a3b8]">
               {data.target.toLocaleString()} LKR
             </div>
           </span>
@@ -709,9 +713,9 @@ function CustomTargetTooltip({ active, payload, label }: any) {
       )}
 
       {hasActual && hasTarget && data.variance !== null && (
-        <div className="border-t border-white/10 pt-1.5 flex items-center justify-between gap-4">
-          <span className="text-muted-foreground font-medium">Variance (vs Target):</span>
-          <span className={`font-bold ${isAhead ? "text-emerald-400" : "text-red-400"}`}>
+        <div className="border-t border-[rgba(255,255,255,0.07)] pt-1.5 flex items-center justify-between gap-4">
+          <span className="text-[#94a3b8] font-medium">Variance (vs Target):</span>
+          <span className={`font-semibold ${isAhead ? "text-[#22c55e]" : "text-[#ef4444]"}`}>
             {isAhead ? "+" : ""}
             {(data.variance / 1_000_000).toFixed(2)} Mn ({isAhead ? "+" : ""}
             {data.variancePct.toFixed(1)}%)

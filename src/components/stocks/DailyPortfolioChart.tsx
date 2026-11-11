@@ -677,52 +677,55 @@ export function DailyPortfolioChart({
                   <AreaChart data={filteredTimeline} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                     <defs>
                       <linearGradient id="glRsGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#10B981" stopOpacity={0.4} />
-                        <stop offset="95%" stopColor="#10B981" stopOpacity={0.0} />
+                        <stop offset="5%" stopColor="#22c55e" stopOpacity={0.25} />
+                        <stop offset="95%" stopColor="#22c55e" stopOpacity={0.0} />
                       </linearGradient>
                     </defs>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.06)" />
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
                     <XAxis
                       dataKey="date"
                       tickFormatter={(d) => {
                         const p = d.split("-");
                         return p.length === 3 ? `${p[2]}/${p[1]}` : d;
                       }}
-                      stroke="#888"
+                      stroke="#64748b"
                       fontSize={11}
                       tickLine={false}
                       axisLine={false}
+                      style={{ fontFamily: "'IBM Plex Mono', monospace" }}
                     />
                     <YAxis
-                      stroke="#10B981"
+                      stroke="#64748b"
                       fontSize={11}
                       tickLine={false}
                       axisLine={false}
                       tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
+                      style={{ fontFamily: "'IBM Plex Mono', monospace" }}
                     />
-                    <ReferenceLine y={0} stroke="rgba(255,255,255,0.25)" strokeDasharray="3 3" label={{ value: "Rs. 0", fill: "#888", fontSize: 10 }} />
+                    <ReferenceLine y={0} stroke="rgba(255,255,255,0.1)" strokeDasharray="3 3" label={{ value: "Rs. 0", fill: "#64748b", fontSize: 10, fontFamily: "'IBM Plex Mono', monospace" }} />
                     <Tooltip
                       contentStyle={{
-                        backgroundColor: "#0f172a",
-                        borderColor: "rgba(255,255,255,0.15)",
-                        borderRadius: "12px",
-                        color: "#ffffff",
+                        backgroundColor: "#242932",
+                        borderColor: "rgba(255,255,255,0.1)",
+                        borderRadius: "8px",
+                        color: "#f1f5f9",
+                        fontFamily: "'IBM Plex Mono', monospace",
                       }}
-                      itemStyle={{ color: "#ffffff", fontSize: "12px" }}
-                      labelStyle={{ color: "#94a3b8", fontWeight: 600, marginBottom: "4px" }}
+                      itemStyle={{ color: "#f1f5f9", fontSize: "11px" }}
+                      labelStyle={{ color: "#94a3b8", fontWeight: 500, marginBottom: "4px" }}
                       labelFormatter={(label) => fmtDate(String(label))}
                       formatter={(val: any) => [
                         `${Number(val) >= 0 ? "+" : ""}Rs. ${fmtDec(Number(val))}`,
                         "Gain / Loss (Rs.)",
                       ]}
                     />
-                    <Legend wrapperStyle={{ paddingTop: "10px", fontSize: "12px" }} />
+                    <Legend wrapperStyle={{ paddingTop: "10px", fontSize: "11px", fontFamily: "'IBM Plex Mono', monospace", color: "#94a3b8" }} />
                     <Area
                       type="monotone"
                       dataKey="gainLossValue"
                       name="Gain / Loss (Rupees)"
-                      stroke="#10B981"
-                      strokeWidth={2.5}
+                      stroke="#22c55e"
+                      strokeWidth={2}
                       fillOpacity={1}
                       fill="url(#glRsGrad)"
                       dot={false}
@@ -737,52 +740,55 @@ export function DailyPortfolioChart({
                   <AreaChart data={filteredTimeline} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                     <defs>
                       <linearGradient id="glPctGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#38BDF8" stopOpacity={0.4} />
-                        <stop offset="95%" stopColor="#38BDF8" stopOpacity={0.0} />
+                        <stop offset="5%" stopColor="#38bdf8" stopOpacity={0.25} />
+                        <stop offset="95%" stopColor="#38bdf8" stopOpacity={0.0} />
                       </linearGradient>
                     </defs>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.06)" />
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255, 255, 255, 0.05)" />
                     <XAxis
                       dataKey="date"
                       tickFormatter={(d) => {
                         const p = d.split("-");
                         return p.length === 3 ? `${p[2]}/${p[1]}` : d;
                       }}
-                      stroke="#888"
+                      stroke="#64748b"
                       fontSize={11}
                       tickLine={false}
                       axisLine={false}
+                      style={{ fontFamily: "'IBM Plex Mono', monospace" }}
                     />
                     <YAxis
-                      stroke="#38BDF8"
+                      stroke="#64748b"
                       fontSize={11}
                       tickLine={false}
                       axisLine={false}
                       tickFormatter={(v) => `${v.toFixed(1)}%`}
+                      style={{ fontFamily: "'IBM Plex Mono', monospace" }}
                     />
-                    <ReferenceLine y={0} stroke="rgba(255,255,255,0.25)" strokeDasharray="3 3" label={{ value: "0%", fill: "#888", fontSize: 10 }} />
+                    <ReferenceLine y={0} stroke="rgba(255, 255, 255, 0.1)" strokeDasharray="3 3" label={{ value: "0%", fill: "#64748b", fontSize: 10, fontFamily: "'IBM Plex Mono', monospace" }} />
                     <Tooltip
                       contentStyle={{
-                        backgroundColor: "#0f172a",
-                        borderColor: "rgba(255,255,255,0.15)",
-                        borderRadius: "12px",
-                        color: "#ffffff",
+                        backgroundColor: "#242932",
+                        borderColor: "rgba(255, 255, 255, 0.1)",
+                        borderRadius: "8px",
+                        color: "#f1f5f9",
+                        fontFamily: "'IBM Plex Mono', monospace",
                       }}
-                      itemStyle={{ color: "#ffffff", fontSize: "12px" }}
-                      labelStyle={{ color: "#94a3b8", fontWeight: 600, marginBottom: "4px" }}
+                      itemStyle={{ color: "#f1f5f9", fontSize: "11px" }}
+                      labelStyle={{ color: "#94a3b8", fontWeight: 500, marginBottom: "4px" }}
                       labelFormatter={(label) => fmtDate(String(label))}
                       formatter={(val: any) => [
                         `${Number(val) >= 0 ? "+" : ""}${Number(val).toFixed(2)}%`,
                         "Portfolio Return (%)",
                       ]}
                     />
-                    <Legend wrapperStyle={{ paddingTop: "10px", fontSize: "12px" }} />
+                    <Legend wrapperStyle={{ paddingTop: "10px", fontSize: "11px", fontFamily: "'IBM Plex Mono', monospace", color: "#94a3b8" }} />
                     <Area
                       type="monotone"
                       dataKey="gainLossPercent"
                       name="Gain / Loss (Percentage ROI)"
-                      stroke="#38BDF8"
-                      strokeWidth={2.5}
+                      stroke="#38bdf8"
+                      strokeWidth={2}
                       fillOpacity={1}
                       fill="url(#glPctGrad)"
                       dot={false}
@@ -797,49 +803,53 @@ export function DailyPortfolioChart({
                   <AreaChart data={filteredTimeline} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                     <defs>
                       <linearGradient id="glCombGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#10B981" stopOpacity={0.35} />
-                        <stop offset="95%" stopColor="#10B981" stopOpacity={0.0} />
+                        <stop offset="5%" stopColor="#38bdf8" stopOpacity={0.25} />
+                        <stop offset="95%" stopColor="#38bdf8" stopOpacity={0.0} />
                       </linearGradient>
                     </defs>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.06)" />
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255, 255, 255, 0.05)" />
                     <XAxis
                       dataKey="date"
                       tickFormatter={(d) => {
                         const p = d.split("-");
                         return p.length === 3 ? `${p[2]}/${p[1]}` : d;
                       }}
-                      stroke="#888"
+                      stroke="#64748b"
                       fontSize={11}
                       tickLine={false}
                       axisLine={false}
+                      style={{ fontFamily: "'IBM Plex Mono', monospace" }}
                     />
                     <YAxis
                       yAxisId="left"
-                      stroke="#10B981"
+                      stroke="#64748b"
                       fontSize={11}
                       tickLine={false}
                       axisLine={false}
                       tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
+                      style={{ fontFamily: "'IBM Plex Mono', monospace" }}
                     />
                     <YAxis
                       yAxisId="right"
                       orientation="right"
-                      stroke="#38BDF8"
+                      stroke="#64748b"
                       fontSize={11}
                       tickLine={false}
                       axisLine={false}
                       tickFormatter={(v) => `${v.toFixed(1)}%`}
+                      style={{ fontFamily: "'IBM Plex Mono', monospace" }}
                     />
-                    <ReferenceLine yAxisId="left" y={0} stroke="rgba(255,255,255,0.2)" strokeDasharray="3 3" />
+                    <ReferenceLine yAxisId="left" y={0} stroke="rgba(255, 255, 255, 0.1)" strokeDasharray="3 3" />
                     <Tooltip
                       contentStyle={{
-                        backgroundColor: "#0f172a",
-                        borderColor: "rgba(255,255,255,0.15)",
-                        borderRadius: "12px",
-                        color: "#ffffff",
+                        backgroundColor: "#242932",
+                        borderColor: "rgba(255, 255, 255, 0.1)",
+                        borderRadius: "8px",
+                        color: "#f1f5f9",
+                        fontFamily: "'IBM Plex Mono', monospace",
                       }}
-                      itemStyle={{ color: "#ffffff", fontSize: "12px" }}
-                      labelStyle={{ color: "#94a3b8", fontWeight: 600, marginBottom: "4px" }}
+                      itemStyle={{ color: "#f1f5f9", fontSize: "11px" }}
+                      labelStyle={{ color: "#94a3b8", fontWeight: 500, marginBottom: "4px" }}
                       labelFormatter={(label) => fmtDate(String(label))}
                       formatter={(val: any, name: any) => {
                         if (name === "Gain / Loss (Rs.)") {
@@ -848,14 +858,14 @@ export function DailyPortfolioChart({
                         return [`${Number(val) >= 0 ? "+" : ""}${Number(val).toFixed(2)}%`, "Gain / Loss (%)"];
                       }}
                     />
-                    <Legend wrapperStyle={{ paddingTop: "10px", fontSize: "12px" }} />
+                    <Legend wrapperStyle={{ paddingTop: "10px", fontSize: "11px", fontFamily: "'IBM Plex Mono', monospace", color: "#94a3b8" }} />
                     <Area
                       yAxisId="left"
                       type="monotone"
                       dataKey="gainLossValue"
                       name="Gain / Loss (Rs.)"
-                      stroke="#10B981"
-                      strokeWidth={2.5}
+                      stroke="#38bdf8"
+                      strokeWidth={2}
                       fillOpacity={1}
                       fill="url(#glCombGrad)"
                     />
@@ -864,7 +874,7 @@ export function DailyPortfolioChart({
                       type="monotone"
                       dataKey="gainLossPercent"
                       name="Gain / Loss (%)"
-                      stroke="#38BDF8"
+                      stroke="#eab308"
                       strokeWidth={2}
                       dot={false}
                     />
@@ -878,56 +888,59 @@ export function DailyPortfolioChart({
                   <AreaChart data={filteredTimeline} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                     <defs>
                       <linearGradient id="valGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#10B981" stopOpacity={0.4} />
-                        <stop offset="95%" stopColor="#10B981" stopOpacity={0.0} />
+                        <stop offset="5%" stopColor="#38bdf8" stopOpacity={0.25} />
+                        <stop offset="95%" stopColor="#38bdf8" stopOpacity={0.0} />
                       </linearGradient>
                       <linearGradient id="costGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.2} />
-                        <stop offset="95%" stopColor="#3B82F6" stopOpacity={0.0} />
+                        <stop offset="5%" stopColor="#eab308" stopOpacity={0.15} />
+                        <stop offset="95%" stopColor="#eab308" stopOpacity={0.0} />
                       </linearGradient>
                     </defs>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.06)" />
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255, 255, 255, 0.05)" />
                     <XAxis
                       dataKey="date"
                       tickFormatter={(d) => {
                         const p = d.split("-");
                         return p.length === 3 ? `${p[2]}/${p[1]}` : d;
                       }}
-                      stroke="#888"
+                      stroke="#64748b"
                       fontSize={11}
                       tickLine={false}
                       axisLine={false}
+                      style={{ fontFamily: "'IBM Plex Mono', monospace" }}
                     />
                     <YAxis
-                      stroke="#888"
+                      stroke="#64748b"
                       fontSize={11}
                       tickLine={false}
                       axisLine={false}
                       tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
                       domain={["auto", "auto"]}
+                      style={{ fontFamily: "'IBM Plex Mono', monospace" }}
                     />
                     <Tooltip
                       contentStyle={{
-                        backgroundColor: "#0f172a",
-                        borderColor: "rgba(255,255,255,0.15)",
-                        borderRadius: "12px",
-                        color: "#ffffff",
+                        backgroundColor: "#242932",
+                        borderColor: "rgba(255, 255, 255, 0.1)",
+                        borderRadius: "8px",
+                        color: "#f1f5f9",
+                        fontFamily: "'IBM Plex Mono', monospace",
                       }}
-                      itemStyle={{ color: "#ffffff", fontSize: "12px" }}
-                      labelStyle={{ color: "#94a3b8", fontWeight: 600, marginBottom: "4px" }}
+                      itemStyle={{ color: "#f1f5f9", fontSize: "11px" }}
+                      labelStyle={{ color: "#94a3b8", fontWeight: 500, marginBottom: "4px" }}
                       labelFormatter={(label) => fmtDate(String(label))}
                       formatter={(val: any, name: any) => [
                         `Rs. ${fmtDec(Number(val))}`,
                         name === "marketValue" ? "Actual Market Value" : "Invested Cost",
                       ]}
                     />
-                    <Legend wrapperStyle={{ paddingTop: "10px", fontSize: "12px" }} />
+                    <Legend wrapperStyle={{ paddingTop: "10px", fontSize: "11px", fontFamily: "'IBM Plex Mono', monospace", color: "#94a3b8" }} />
                     <Area
                       type="monotone"
                       dataKey="marketValue"
                       name="Actual Market Value"
-                      stroke="#10B981"
-                      strokeWidth={2.5}
+                      stroke="#38bdf8"
+                      strokeWidth={2}
                       fillOpacity={1}
                       fill="url(#valGrad)"
                     />
@@ -935,7 +948,7 @@ export function DailyPortfolioChart({
                       type="stepAfter"
                       dataKey="costBasis"
                       name="Invested Cost"
-                      stroke="#3B82F6"
+                      stroke="#eab308"
                       strokeWidth={2}
                       strokeDasharray="4 4"
                       fillOpacity={1}
@@ -949,35 +962,38 @@ export function DailyPortfolioChart({
               {activeChart === "daily_change" && (
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={filteredTimeline} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.06)" />
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255, 255, 255, 0.05)" />
                     <XAxis
                       dataKey="date"
                       tickFormatter={(d) => {
                         const p = d.split("-");
                         return p.length === 3 ? `${p[2]}/${p[1]}` : d;
                       }}
-                      stroke="#888"
+                      stroke="#64748b"
                       fontSize={11}
                       tickLine={false}
                       axisLine={false}
+                      style={{ fontFamily: "'IBM Plex Mono', monospace" }}
                     />
                     <YAxis
-                      stroke="#888"
+                      stroke="#64748b"
                       fontSize={11}
                       tickLine={false}
                       axisLine={false}
                       tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
+                      style={{ fontFamily: "'IBM Plex Mono', monospace" }}
                     />
-                    <ReferenceLine y={0} stroke="rgba(255,255,255,0.2)" strokeDasharray="2 2" />
+                    <ReferenceLine y={0} stroke="rgba(255, 255, 255, 0.1)" strokeDasharray="2 2" />
                     <Tooltip
                       contentStyle={{
-                        backgroundColor: "#0f172a",
-                        borderColor: "rgba(255,255,255,0.15)",
-                        borderRadius: "12px",
-                        color: "#ffffff",
+                        backgroundColor: "#242932",
+                        borderColor: "rgba(255, 255, 255, 0.1)",
+                        borderRadius: "8px",
+                        color: "#f1f5f9",
+                        fontFamily: "'IBM Plex Mono', monospace",
                       }}
-                      itemStyle={{ color: "#ffffff", fontSize: "12px" }}
-                      labelStyle={{ color: "#94a3b8", fontWeight: 600, marginBottom: "4px" }}
+                      itemStyle={{ color: "#f1f5f9", fontSize: "11px" }}
+                      labelStyle={{ color: "#94a3b8", fontWeight: 500, marginBottom: "4px" }}
                       labelFormatter={(label) => fmtDate(String(label))}
                       formatter={(val: any, _name: any, item: any) => {
                         const pct = item.payload.dailyPercentChange;
@@ -992,7 +1008,7 @@ export function DailyPortfolioChart({
                       {filteredTimeline.map((entry, index) => (
                         <Cell
                           key={`cell-${index}`}
-                          fill={entry.dailyValueChange >= 0 ? "#10B981" : "#EF4444"}
+                          fill={entry.dailyValueChange >= 0 ? "#22c55e" : "#ef4444"}
                         />
                       ))}
                     </Bar>

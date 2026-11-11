@@ -113,16 +113,16 @@ function generateMonthlyData(
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (!active || !payload?.length) return null;
   return (
-    <div className="rounded-xl border border-white/10 bg-background/95 backdrop-blur-xl p-3 shadow-xl text-xs space-y-1.5">
-      <p className="text-muted-foreground font-medium mb-2">{label}</p>
+    <div className="rounded-[8px] border border-[rgba(255,255,255,0.1)] bg-[#242932] p-3 shadow-xl text-xs space-y-1.5 font-mono [font-feature-settings:'tnum'] text-[#f1f5f9]">
+      <p className="text-[#94a3b8] font-medium mb-2">{label}</p>
       {payload.map((p: any) => (
         <div key={p.dataKey} className="flex items-center gap-2">
           <span
             className="w-2 h-2 rounded-full shrink-0"
             style={{ backgroundColor: p.color }}
           />
-          <span className="text-muted-foreground">{p.dataKey}:</span>
-          <span className="font-semibold text-foreground">
+          <span className="text-[#94a3b8]">{p.dataKey}:</span>
+          <span className="font-semibold text-[#f1f5f9]">
             {fmtLKR(p.value)}
           </span>
         </div>
@@ -148,12 +148,12 @@ export function LoanChart() {
   };
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-6">
+    <div className="rounded-[10px] border border-[rgba(255,255,255,0.07)] bg-[#1c2026] p-6 shadow-none">
       <div className="mb-5">
-        <h2 className="text-base font-semibold text-foreground">
+        <h2 className="text-base font-semibold text-[#f1f5f9]">
           Monthly Loan Overview
         </h2>
-        <p className="text-xs text-muted-foreground mt-0.5">
+        <p className="text-xs text-[#94a3b8] mt-0.5">
           Month-by-month snapshot of remaining capital, amount paid, and
           interest across all loans
         </p>
@@ -168,45 +168,47 @@ export function LoanChart() {
             <CartesianGrid
               strokeDasharray="3 3"
               vertical={false}
-              stroke="rgba(255,255,255,0.05)"
+              stroke="rgba(255, 255, 255, 0.05)"
             />
             <XAxis
               dataKey="month"
-              stroke="#888888"
+              stroke="#64748b"
               fontSize={11}
               tickLine={false}
               axisLine={false}
               interval="preserveStartEnd"
+              style={{ fontFamily: "'IBM Plex Mono', monospace" }}
             />
             <YAxis
-              stroke="#888888"
+              stroke="#64748b"
               fontSize={11}
               tickLine={false}
               axisLine={false}
               tickFormatter={tickFormatter}
               width={52}
+              style={{ fontFamily: "'IBM Plex Mono', monospace" }}
             />
             <Tooltip content={<CustomTooltip />} />
             <Legend
-              wrapperStyle={{ fontSize: "12px", paddingTop: "12px" }}
+              wrapperStyle={{ fontSize: "11px", paddingTop: "12px", fontFamily: "'IBM Plex Mono', monospace", color: "#94a3b8" }}
               iconType="circle"
               iconSize={8}
             />
             <Line
               type="monotone"
               dataKey="Remaining Capital"
-              stroke="#f97316"
+              stroke="#ef4444"
               strokeWidth={2.5}
               dot={false}
-              activeDot={{ r: 5, strokeWidth: 0 }}
+              activeDot={{ r: 5, strokeWidth: 0, fill: "#ef4444" }}
             />
             <Line
               type="monotone"
               dataKey="Amount Paid"
-              stroke="#3b82f6"
+              stroke="#38bdf8"
               strokeWidth={2.5}
               dot={false}
-              activeDot={{ r: 5, strokeWidth: 0 }}
+              activeDot={{ r: 5, strokeWidth: 0, fill: "#38bdf8" }}
             />
             <Line
               type="monotone"
@@ -214,7 +216,7 @@ export function LoanChart() {
               stroke="#eab308"
               strokeWidth={2.5}
               dot={false}
-              activeDot={{ r: 5, strokeWidth: 0 }}
+              activeDot={{ r: 5, strokeWidth: 0, fill: "#eab308" }}
             />
           </LineChart>
         </ResponsiveContainer>

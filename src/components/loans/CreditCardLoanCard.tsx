@@ -86,10 +86,10 @@ export function CreditCardLoanCard({ loan }: { loan: CreditCardLoan }) {
 
   return (
     <div
-      className={`rounded-2xl border bg-white/5 backdrop-blur-xl overflow-hidden transition-all duration-200 ${
+      className={`rounded-[10px] border bg-[#1c2026] overflow-hidden transition-all duration-200 ${
         metrics.isSettled
-          ? "border-green-500/30 opacity-80"
-          : "border-white/10 hover:border-white/20"
+          ? "border-[rgba(34,197,94,0.3)] opacity-90"
+          : "border-[rgba(255,255,255,0.07)] hover:border-[rgba(255,255,255,0.15)]"
       }`}
     >
       <div className="p-5">
@@ -97,21 +97,21 @@ export function CreditCardLoanCard({ loan }: { loan: CreditCardLoan }) {
         <div className="flex items-start justify-between gap-3 mb-4">
           <div className="flex items-center gap-3">
             <div
-              className={`p-2.5 rounded-xl ${
-                metrics.isSettled ? "bg-green-500/15" : "bg-purple-500/15"
+              className={`p-2.5 rounded-[8px] ${
+                metrics.isSettled ? "bg-[rgba(34,197,94,0.12)]" : "bg-[#242932]"
               }`}
             >
               <CreditCard
                 className={`h-5 w-5 ${
-                  metrics.isSettled ? "text-green-400" : "text-purple-400"
+                  metrics.isSettled ? "text-[#22c55e]" : "text-[#38bdf8]"
                 }`}
               />
             </div>
             <div>
-              <h3 className="font-semibold text-foreground text-sm leading-tight">
+              <h3 className="font-semibold text-[#f1f5f9] text-sm leading-tight">
                 {loan.name}
               </h3>
-              <p className="text-xs text-muted-foreground mt-0.5">
+              <p className="text-xs text-[#94a3b8] mt-0.5 font-mono">
                 Since {fmtDate(loan.dateOfLoan)} · {durationStr} ·{" "}
                 {loan.interestRate}% p.a.
               </p>
@@ -119,7 +119,7 @@ export function CreditCardLoanCard({ loan }: { loan: CreditCardLoan }) {
           </div>
           <div className="flex items-center gap-2 shrink-0">
             {metrics.isSettled && (
-              <span className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-green-500/15 text-green-400 text-xs font-medium">
+              <span className="flex items-center gap-1 px-2.5 py-1 rounded-[6px] bg-[rgba(34,197,94,0.12)] text-[#22c55e] border border-[rgba(34,197,94,0.2)] text-xs font-mono font-medium">
                 <CheckCircle className="h-3 w-3" /> Settled
               </span>
             )}
@@ -127,13 +127,13 @@ export function CreditCardLoanCard({ loan }: { loan: CreditCardLoan }) {
               <div className="flex gap-1">
                 <button
                   onClick={() => setConfirmDelete(false)}
-                  className="px-2 py-1 rounded-lg text-xs border border-white/10 text-muted-foreground hover:bg-white/10 transition"
+                  className="px-2 py-1 rounded-md text-xs border border-[rgba(255,255,255,0.07)] text-[#94a3b8] hover:bg-[#242932] transition"
                 >
                   No
                 </button>
                 <button
                   onClick={handleDelete}
-                  className="px-2 py-1 rounded-lg text-xs bg-red-500/20 border border-red-500/30 text-red-400 hover:bg-red-500/30 transition"
+                  className="px-2 py-1 rounded-md text-xs bg-[rgba(239,68,68,0.12)] border border-[rgba(239,68,68,0.2)] text-[#ef4444] hover:bg-[rgba(239,68,68,0.2)] transition"
                 >
                   Delete
                 </button>
@@ -141,7 +141,7 @@ export function CreditCardLoanCard({ loan }: { loan: CreditCardLoan }) {
             ) : (
               <button
                 onClick={handleDelete}
-                className="p-1.5 rounded-lg text-muted-foreground hover:text-red-400 hover:bg-red-500/10 transition"
+                className="p-1.5 rounded-md text-[#94a3b8] hover:text-[#ef4444] hover:bg-[rgba(239,68,68,0.12)] transition"
               >
                 <Trash2 className="h-4 w-4" />
               </button>
@@ -151,35 +151,35 @@ export function CreditCardLoanCard({ loan }: { loan: CreditCardLoan }) {
 
         {/* Metrics grid — 5 cells */}
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-4">
-          <div className="rounded-xl bg-white/5 p-3">
-            <p className="text-xs text-muted-foreground mb-1">Principal</p>
-            <p className="text-sm font-semibold text-foreground">
+          <div className="rounded-[8px] bg-[#14171c] border border-[rgba(255,255,255,0.04)] p-3">
+            <p className="text-xs text-[#94a3b8] mb-1">Principal</p>
+            <p className="text-sm font-semibold text-[#f1f5f9] font-mono [font-feature-settings:'tnum']">
               {fmt(loan.amount)}
             </p>
           </div>
-          <div className="rounded-xl bg-white/5 p-3">
-            <p className="text-xs text-muted-foreground mb-1">Monthly</p>
-            <p className="text-sm font-semibold text-foreground">
+          <div className="rounded-[8px] bg-[#14171c] border border-[rgba(255,255,255,0.04)] p-3">
+            <p className="text-xs text-[#94a3b8] mb-1">Monthly</p>
+            <p className="text-sm font-semibold text-[#f1f5f9] font-mono [font-feature-settings:'tnum']">
               {fmt(loan.monthlyPayment)}
             </p>
           </div>
-          <div className="rounded-xl bg-white/5 p-3">
-            <p className="text-xs text-muted-foreground mb-1">Already Paid</p>
-            <p className="text-sm font-semibold text-blue-400">
+          <div className="rounded-[8px] bg-[#14171c] border border-[rgba(255,255,255,0.04)] p-3">
+            <p className="text-xs text-[#94a3b8] mb-1">Already Paid</p>
+            <p className="text-sm font-semibold text-[#38bdf8] font-mono [font-feature-settings:'tnum']">
               {fmt(metrics.alreadyPaid)}
             </p>
           </div>
-          <div className="rounded-xl bg-white/5 p-3">
-            <p className="text-xs text-muted-foreground mb-1">Interest Paid</p>
-            <p className="text-sm font-semibold text-yellow-400">
+          <div className="rounded-[8px] bg-[#14171c] border border-[rgba(255,255,255,0.04)] p-3">
+            <p className="text-xs text-[#94a3b8] mb-1">Interest Paid</p>
+            <p className="text-sm font-semibold text-[#eab308] font-mono [font-feature-settings:'tnum']">
               {fmt(metrics.totalInterestPaid)}
             </p>
           </div>
-          <div className="rounded-xl bg-white/5 p-3">
-            <p className="text-xs text-muted-foreground mb-1">Remaining</p>
+          <div className="rounded-[8px] bg-[#14171c] border border-[rgba(255,255,255,0.04)] p-3">
+            <p className="text-xs text-[#94a3b8] mb-1">Remaining</p>
             <p
-              className={`text-sm font-semibold ${
-                metrics.isSettled ? "text-green-400" : "text-orange-400"
+              className={`text-sm font-semibold font-mono [font-feature-settings:'tnum'] ${
+                metrics.isSettled ? "text-[#22c55e]" : "text-[#eab308]"
               }`}
             >
               {metrics.isSettled
@@ -191,22 +191,22 @@ export function CreditCardLoanCard({ loan }: { loan: CreditCardLoan }) {
 
         {/* Progress */}
         <div className="mb-4">
-          <div className="flex justify-between text-xs text-muted-foreground mb-1.5">
+          <div className="flex justify-between text-xs text-[#94a3b8] mb-1.5 font-mono">
             <span>Repayment progress</span>
             <span>{metrics.percentPaid.toFixed(1)}%</span>
           </div>
-          <div className="h-2 rounded-full bg-white/10 overflow-hidden">
+          <div className="h-2 rounded-full bg-[rgba(255,255,255,0.07)] overflow-hidden">
             <div
               className={`h-full rounded-full transition-all duration-500 ${
-                metrics.isSettled ? "bg-green-400" : "bg-purple-400"
+                metrics.isSettled ? "bg-[#22c55e]" : "bg-[#38bdf8]"
               }`}
               style={{ width: `${metrics.percentPaid}%` }}
             />
           </div>
-          <div className="flex justify-between text-xs text-muted-foreground mt-1.5">
+          <div className="flex justify-between text-xs text-[#94a3b8] mt-1.5 font-mono">
             <span>
               Total interest:{" "}
-              <span className="text-yellow-400/70">
+              <span className="text-[#eab308]">
                 {fmt(metrics.totalInterest)}
               </span>
             </span>
@@ -356,14 +356,14 @@ export function CreditCardLoanCard({ loan }: { loan: CreditCardLoan }) {
                   <button
                     type="button"
                     onClick={() => setShowSettle(false)}
-                    className="flex-1 py-2 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-xs text-muted-foreground transition"
+                    className="flex-1 py-2 rounded-[8px] border border-[rgba(255,255,255,0.07)] bg-transparent hover:bg-[#242932] text-xs text-[#94a3b8] transition"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={loading}
-                    className="flex-1 py-2 rounded-xl bg-green-500/80 hover:bg-green-500 text-xs font-semibold text-white transition disabled:opacity-50"
+                    className="flex-1 py-2 rounded-[8px] bg-[#22c55e] hover:bg-[#22c55e]/90 text-xs font-semibold text-[#0f172a] transition disabled:opacity-50"
                   >
                     {loading ? "Saving…" : "Confirm Settlement"}
                   </button>
@@ -375,7 +375,7 @@ export function CreditCardLoanCard({ loan }: { loan: CreditCardLoan }) {
 
         {/* Settled info */}
         {metrics.isSettled && loan.settled && (
-          <div className="flex items-center gap-2 text-xs text-green-400 bg-green-500/10 rounded-lg px-3 py-2">
+          <div className="flex items-center gap-2 text-xs font-mono text-[#22c55e] bg-[rgba(34,197,94,0.12)] border border-[rgba(34,197,94,0.2)] rounded-[8px] px-3 py-2">
             <AlertCircle className="h-3.5 w-3.5 shrink-0" />
             Settled on {fmtDate(loan.settled.settleDate)} for{" "}
             {fmt(loan.settled.settleAmount)}

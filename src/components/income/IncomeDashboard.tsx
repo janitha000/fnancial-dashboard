@@ -66,19 +66,19 @@ export function IncomeDashboard() {
 
   // Colors for categories
   const PASSIVE_COLORS: Record<string, string> = {
-    "LKR FD": "#6366f1",
-    "USD FD": "#8b5cf6",
-    "UT - Income Fund": "#ec4899",
-    "UT - Equity Fund": "#f43f5e",
-    "TBill": "#f59e0b",
-    "Dividends": "#10b981",
-    "Stock Market": "#06b6d4",
-    "NDB Wealth": "#3b82f6",
+    "LKR FD": "#38bdf8",
+    "USD FD": "#94a3b8",
+    "UT - Income Fund": "#eab308",
+    "UT - Equity Fund": "#ef4444",
+    "TBill": "#64748b",
+    "Dividends": "#22c55e",
+    "Stock Market": "#38bdf8",
+    "NDB Wealth": "#22c55e",
   };
 
   const TYPE_COLORS = {
-    "Salary": "#6366f1",
-    "Passive Income": "#10b981",
+    "Salary": "#38bdf8",
+    "Passive Income": "#22c55e",
   };
 
   // ─── Navigation Logic ───────────────────────────────────────────────────────
@@ -347,10 +347,10 @@ export function IncomeDashboard() {
                       <Cell key="passive" fill={TYPE_COLORS["Passive Income"]} />
                     </Pie>
                     <Tooltip 
-                      contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', borderRadius: '12px' }}
+                      contentStyle={{ backgroundColor: '#242932', borderColor: 'rgba(255, 255, 255, 0.1)', borderRadius: '8px', color: '#f1f5f9', fontFamily: "'IBM Plex Mono', monospace" }}
                       formatter={(val: any) => val?.toLocaleString()}
                     />
-                    <Legend />
+                    <Legend wrapperStyle={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: "11px", color: "#94a3b8" }} />
                   </PieChart>
                 </ResponsiveContainer>
               </CardContent>
@@ -376,14 +376,14 @@ export function IncomeDashboard() {
                       label={({ name, percent }) => `${name} ${((percent || 0) * 100).toFixed(0)}%`}
                     >
                       {Object.entries(monthlySummary.passiveBreakdown).map(([name], index) => (
-                        <Cell key={`cell-${index}`} fill={PASSIVE_COLORS[name] || "#8884d8"} />
+                        <Cell key={`cell-${index}`} fill={PASSIVE_COLORS[name] || "#64748b"} />
                       ))}
                     </Pie>
                     <Tooltip 
-                      contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', borderRadius: '12px' }}
+                      contentStyle={{ backgroundColor: '#242932', borderColor: 'rgba(255, 255, 255, 0.1)', borderRadius: '8px', color: '#f1f5f9', fontFamily: "'IBM Plex Mono', monospace" }}
                       formatter={(val: any) => val?.toLocaleString()}
                     />
-                    <Legend />
+                    <Legend wrapperStyle={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: "11px", color: "#94a3b8" }} />
                   </PieChart>
                 </ResponsiveContainer>
               </CardContent>
@@ -415,14 +415,14 @@ export function IncomeDashboard() {
                           dataKey="value"
                           label={({ name, percent }) => `${name} ${((percent || 0) * 100).toFixed(0)}%`}
                         >
-                          <Cell key="janitha" fill="#6366f1" />
-                          <Cell key="vindya" fill="#ec4899" />
+                          <Cell key="janitha" fill="#38bdf8" />
+                          <Cell key="vindya" fill="#22c55e" />
                         </Pie>
                         <Tooltip 
-                          contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', borderRadius: '12px' }}
+                          contentStyle={{ backgroundColor: '#242932', borderColor: 'rgba(255, 255, 255, 0.1)', borderRadius: '8px', color: '#f1f5f9', fontFamily: "'IBM Plex Mono', monospace" }}
                           formatter={(val: any) => val?.toLocaleString()}
                         />
-                        <Legend />
+                        <Legend wrapperStyle={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: "11px", color: "#94a3b8" }} />
                       </PieChart>
                     </ResponsiveContainer>
                   </CardContent>
@@ -454,10 +454,10 @@ export function IncomeDashboard() {
                         <Cell key="passive" fill={TYPE_COLORS["Passive Income"]} />
                       </Pie>
                       <Tooltip 
-                        contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', borderRadius: '12px' }}
+                        contentStyle={{ backgroundColor: '#242932', borderColor: 'rgba(255, 255, 255, 0.1)', borderRadius: '8px', color: '#f1f5f9', fontFamily: "'IBM Plex Mono', monospace" }}
                         formatter={(val: any) => val?.toLocaleString()}
                       />
-                      <Legend />
+                      <Legend wrapperStyle={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: "11px", color: "#94a3b8" }} />
                     </PieChart>
                   </ResponsiveContainer>
                 </CardContent>
@@ -473,19 +473,19 @@ export function IncomeDashboard() {
               <CardContent className="h-[400px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={fyChartData}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-white/5" />
-                    <XAxis dataKey="month" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
-                    <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(val) => `${(val/1000).toFixed(0)}k`} />
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255, 255, 255, 0.05)" />
+                    <XAxis dataKey="month" stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} style={{ fontFamily: "'IBM Plex Mono', monospace" }} />
+                    <YAxis stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(val) => `${(val/1000).toFixed(0)}k`} style={{ fontFamily: "'IBM Plex Mono', monospace" }} />
                     <Tooltip 
-                      cursor={{ fill: 'rgba(255,255,255,0.05)' }}
-                      contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', borderRadius: '12px' }}
+                      cursor={{ fill: 'rgba(255,255,255,0.04)' }}
+                      contentStyle={{ backgroundColor: '#242932', borderColor: 'rgba(255, 255, 255, 0.1)', borderRadius: '8px', color: '#f1f5f9', fontFamily: "'IBM Plex Mono', monospace" }}
                       formatter={(val: any) => val?.toLocaleString()}
                     />
-                    <Legend />
+                    <Legend wrapperStyle={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: "11px", color: "#94a3b8" }} />
                     {filterUser === "Household" ? (
                       <>
-                        <Bar dataKey="Janitha" stackId="total" fill="#6366f1" radius={[0, 0, 0, 0]} />
-                        <Bar dataKey="Vindya" stackId="total" fill="#ec4899" radius={[0, 0, 0, 0]} />
+                        <Bar dataKey="Janitha" stackId="total" fill="#38bdf8" radius={[0, 0, 0, 0]} />
+                        <Bar dataKey="Vindya" stackId="total" fill="#22c55e" radius={[0, 0, 0, 0]} />
                       </>
                     ) : (
                       <Bar dataKey="Salary" stackId="total" fill={TYPE_COLORS["Salary"]} />
@@ -506,15 +506,15 @@ export function IncomeDashboard() {
                 <CardContent className="h-[400px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={fyChartData}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-white/5" />
-                      <XAxis dataKey="month" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
-                      <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(val) => `${(val/1000).toFixed(0)}k`} />
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255, 255, 255, 0.05)" />
+                      <XAxis dataKey="month" stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} style={{ fontFamily: "'IBM Plex Mono', monospace" }} />
+                      <YAxis stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(val) => `${(val/1000).toFixed(0)}k`} style={{ fontFamily: "'IBM Plex Mono', monospace" }} />
                       <Tooltip 
-                        cursor={{ fill: 'rgba(255,255,255,0.05)' }}
-                        contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', borderRadius: '12px' }}
+                        cursor={{ fill: 'rgba(255,255,255,0.04)' }}
+                        contentStyle={{ backgroundColor: '#242932', borderColor: 'rgba(255, 255, 255, 0.1)', borderRadius: '8px', color: '#f1f5f9', fontFamily: "'IBM Plex Mono', monospace" }}
                         formatter={(val: any) => val?.toLocaleString()}
                       />
-                      <Legend iconType="circle" />
+                      <Legend iconType="circle" wrapperStyle={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: "11px", color: "#94a3b8" }} />
                       {Object.keys(PASSIVE_COLORS).map((cat) => (
                         <Bar key={cat} dataKey={cat} stackId="passive" fill={PASSIVE_COLORS[cat]} />
                       ))}

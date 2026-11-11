@@ -95,12 +95,12 @@ function computeSummary(
 }
 
 type MetricCardProps = { label: string; value: string; sub?: string; accent?: string };
-function MetricCard({ label, value, sub, accent = "text-foreground" }: MetricCardProps) {
+function MetricCard({ label, value, sub, accent = "text-[#f1f5f9]" }: MetricCardProps) {
   return (
-    <div className="rounded-2xl bg-white/5 border border-white/10 p-5">
-      <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2">{label}</p>
-      <p className={`text-2xl font-bold ${accent}`}>{value}</p>
-      {sub && <p className="text-xs text-muted-foreground mt-1">{sub}</p>}
+    <div className="rounded-[8px] bg-[#14171c] border border-[rgba(255,255,255,0.04)] p-4">
+      <p className="text-xs text-[#94a3b8] uppercase tracking-wide mb-1.5 font-medium">{label}</p>
+      <p className={`text-2xl font-bold font-mono [font-feature-settings:'tnum'] ${accent}`}>{value}</p>
+      {sub && <p className="text-xs text-[#64748b] mt-1 font-mono">{sub}</p>}
     </div>
   );
 }
@@ -118,7 +118,7 @@ export function LoanDashboard({ showSettled }: { showSettled: boolean }) {
   const summary = tab === "yearly" ? yearlySummary : lifetimeSummary;
 
   const settledNote = !showSettled ? (
-    <span className="text-xs text-muted-foreground/60 font-normal"> (excl. settled)</span>
+    <span className="text-xs text-[#64748b] font-normal"> (excl. settled)</span>
   ) : null;
 
   // Ongoing loans for remaining capital breakdown (not filtered by FY/tab — always current state)
@@ -131,25 +131,25 @@ export function LoanDashboard({ showSettled }: { showSettled: boolean }) {
     activeOD.reduce((s, l) => s + getOverdraftLoanMetrics(l).outstanding, 0);
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-6">
+    <div className="rounded-[10px] border border-[rgba(255,255,255,0.07)] bg-[#1c2026] p-6 shadow-none">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
-        <h2 className="text-lg font-semibold text-foreground">
+        <h2 className="text-lg font-semibold text-[#f1f5f9]">
           Loan Dashboard{settledNote}
         </h2>
         <div className="flex items-center gap-2">
           {/* Tab switcher */}
-          <div className="flex rounded-xl bg-white/5 border border-white/10 p-1 gap-1">
+          <div className="flex rounded-[8px] bg-[#14171c] border border-[rgba(255,255,255,0.07)] p-1 gap-1">
             <button
               id="dash-tab-yearly"
               onClick={() => setTab("yearly")}
-              className={`px-4 py-1.5 rounded-lg text-sm font-medium transition ${tab === "yearly" ? "bg-primary text-white shadow" : "text-muted-foreground hover:text-foreground"}`}
+              className={`px-4 py-1.5 rounded-[6px] text-sm font-medium transition ${tab === "yearly" ? "bg-[#38bdf8] text-[#0f172a] font-semibold" : "text-[#94a3b8] hover:text-[#f1f5f9]"}`}
             >
               Yearly
             </button>
             <button
               id="dash-tab-lifetime"
               onClick={() => setTab("lifetime")}
-              className={`px-4 py-1.5 rounded-lg text-sm font-medium transition ${tab === "lifetime" ? "bg-primary text-white shadow" : "text-muted-foreground hover:text-foreground"}`}
+              className={`px-4 py-1.5 rounded-[6px] text-sm font-medium transition ${tab === "lifetime" ? "bg-[#38bdf8] text-[#0f172a] font-semibold" : "text-[#94a3b8] hover:text-[#f1f5f9]"}`}
             >
               Lifetime
             </button>
@@ -161,7 +161,7 @@ export function LoanDashboard({ showSettled }: { showSettled: boolean }) {
               id="dash-fy-select"
               value={selectedFY}
               onChange={(e) => setSelectedFY(e.target.value)}
-              className="bg-white/5 border border-white/10 rounded-xl px-3 py-1.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary/60 transition"
+              className="bg-[#14171c] border border-[rgba(255,255,255,0.07)] rounded-[8px] px-3 py-1.5 text-sm text-[#f1f5f9] font-mono focus:outline-none focus:ring-1 focus:ring-[#38bdf8] transition"
             >
               {allFYs.map((fy) => (
                 <option key={fy} value={fy}>{fy}</option>
@@ -175,41 +175,41 @@ export function LoanDashboard({ showSettled }: { showSettled: boolean }) {
         <MetricCard
           label="Full Loan Amount"
           value={fmt(summary.totalLoanAmount)}
-          accent="text-foreground"
+          accent="text-[#f1f5f9]"
         />
         <MetricCard
           label="Already Paid"
           value={fmt(summary.alreadyPaid)}
           sub={`${summary.paymentPercent.toFixed(1)}% of total`}
-          accent="text-blue-400"
+          accent="text-[#38bdf8]"
         />
         <MetricCard
           label="Interest Paid"
           value={fmt(summary.interestPaid)}
-          accent="text-yellow-400"
+          accent="text-[#eab308]"
         />
         <MetricCard
           label="Settled Amount"
           value={fmt(summary.settledAmount)}
-          accent="text-green-400"
+          accent="text-[#22c55e]"
         />
         <MetricCard
           label="Remaining Outstanding"
           value={fmt(totalRemaining)}
-          accent="text-orange-400" // matched to the orange text in breakdown
+          accent="text-[#eab308]"
         />
       </div>
 
       {/* Overall progress bar */}
       {summary.totalLoanAmount > 0 && (
         <div className="mb-6">
-          <div className="flex justify-between text-xs text-muted-foreground mb-1.5">
+          <div className="flex justify-between text-xs text-[#94a3b8] mb-1.5 font-mono">
             <span>Overall repayment progress ({tab === "yearly" ? selectedFY : "all time"})</span>
             <span>{summary.paymentPercent.toFixed(1)}%</span>
           </div>
-          <div className="h-3 rounded-full bg-white/10 overflow-hidden">
+          <div className="h-3 rounded-full bg-[rgba(255,255,255,0.07)] overflow-hidden">
             <div
-              className="h-full rounded-full bg-gradient-to-r from-primary to-blue-400 transition-all duration-700"
+              className="h-full rounded-full bg-[#38bdf8] transition-all duration-700"
               style={{ width: `${summary.paymentPercent}%` }}
             />
           </div>
@@ -218,23 +218,23 @@ export function LoanDashboard({ showSettled }: { showSettled: boolean }) {
 
       {/* Remaining capital breakdown — ongoing loans only */}
       {(ongoingVehicle.length > 0 || activeOD.length > 0 || ongoingCC.length > 0) && (
-        <div className="border-t border-white/10 pt-5">
+        <div className="border-t border-[rgba(255,255,255,0.07)] pt-5">
           <div className="flex items-center justify-between mb-3">
-            <p className="text-xs text-muted-foreground uppercase tracking-wide">
+            <p className="text-xs text-[#94a3b8] uppercase tracking-wide font-medium">
               Remaining Capital (ongoing loans)
             </p>
-            <p className="text-sm font-bold text-orange-400">{fmt(totalRemaining)}</p>
+            <p className="text-sm font-bold text-[#eab308] font-mono [font-feature-settings:'tnum']">{fmt(totalRemaining)}</p>
           </div>
           <div className="space-y-2">
             {ongoingVehicle.map((l) => {
               const m = getVehicleLoanMetrics(l);
               return (
-                <div key={l.id} className="flex items-center gap-3 rounded-lg bg-white/5 px-3 py-2.5">
-                  <Car className="h-3.5 w-3.5 text-blue-400 shrink-0" />
-                  <span className="text-sm text-foreground flex-1 truncate">{l.name}</span>
+                <div key={l.id} className="flex items-center gap-3 rounded-[8px] bg-[#14171c] border border-[rgba(255,255,255,0.04)] px-3 py-2.5">
+                  <Car className="h-3.5 w-3.5 text-[#38bdf8] shrink-0" />
+                  <span className="text-sm text-[#f1f5f9] flex-1 truncate">{l.name}</span>
                   <div className="text-right shrink-0">
-                    <p className="text-sm font-semibold text-blue-400">{fmt(m.remainingCapital)}</p>
-                    <p className="text-[10px] text-muted-foreground">{m.percentPaid.toFixed(0)}% paid · {l.duration - m.monthsElapsed}mo left</p>
+                    <p className="text-sm font-semibold text-[#38bdf8] font-mono [font-feature-settings:'tnum']">{fmt(m.remainingCapital)}</p>
+                    <p className="text-[10px] text-[#94a3b8] font-mono">{m.percentPaid.toFixed(0)}% paid · {l.duration - m.monthsElapsed}mo left</p>
                   </div>
                 </div>
               );
@@ -242,12 +242,12 @@ export function LoanDashboard({ showSettled }: { showSettled: boolean }) {
             {ongoingCC.map((l) => {
               const m = getVehicleLoanMetrics(l as any);
               return (
-                <div key={l.id} className="flex items-center gap-3 rounded-lg bg-white/5 px-3 py-2.5">
-                  <CreditCard className="h-3.5 w-3.5 text-purple-400 shrink-0" />
-                  <span className="text-sm text-foreground flex-1 truncate">{l.name}</span>
+                <div key={l.id} className="flex items-center gap-3 rounded-[8px] bg-[#14171c] border border-[rgba(255,255,255,0.04)] px-3 py-2.5">
+                  <CreditCard className="h-3.5 w-3.5 text-[#38bdf8] shrink-0" />
+                  <span className="text-sm text-[#f1f5f9] flex-1 truncate">{l.name}</span>
                   <div className="text-right shrink-0">
-                    <p className="text-sm font-semibold text-purple-400">{fmt(m.remainingCapital)}</p>
-                    <p className="text-[10px] text-muted-foreground">{m.percentPaid.toFixed(0)}% paid · {l.duration - m.monthsElapsed}mo left</p>
+                    <p className="text-sm font-semibold text-[#38bdf8] font-mono [font-feature-settings:'tnum']">{fmt(m.remainingCapital)}</p>
+                    <p className="text-[10px] text-[#94a3b8] font-mono">{m.percentPaid.toFixed(0)}% paid · {l.duration - m.monthsElapsed}mo left</p>
                   </div>
                 </div>
               );
@@ -255,12 +255,12 @@ export function LoanDashboard({ showSettled }: { showSettled: boolean }) {
             {activeOD.map((l) => {
               const m = getOverdraftLoanMetrics(l);
               return (
-                <div key={l.id} className="flex items-center gap-3 rounded-lg bg-white/5 px-3 py-2.5">
-                  <CreditCard className="h-3.5 w-3.5 text-orange-400 shrink-0" />
-                  <span className="text-sm text-foreground flex-1 truncate">{l.name}</span>
+                <div key={l.id} className="flex items-center gap-3 rounded-[8px] bg-[#14171c] border border-[rgba(255,255,255,0.04)] px-3 py-2.5">
+                  <CreditCard className="h-3.5 w-3.5 text-[#eab308] shrink-0" />
+                  <span className="text-sm text-[#f1f5f9] flex-1 truncate">{l.name}</span>
                   <div className="text-right shrink-0">
-                    <p className="text-sm font-semibold text-orange-400">{fmt(m.outstanding)}</p>
-                    <p className="text-[10px] text-muted-foreground">{m.percentUsed.toFixed(0)}% utilized</p>
+                    <p className="text-sm font-semibold text-[#eab308] font-mono [font-feature-settings:'tnum']">{fmt(m.outstanding)}</p>
+                    <p className="text-[10px] text-[#94a3b8] font-mono">{m.percentUsed.toFixed(0)}% utilized</p>
                   </div>
                 </div>
               );

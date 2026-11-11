@@ -474,32 +474,34 @@ export function MonthlyPortfolioGrowthChart({
                   <ComposedChart data={growthData} margin={{ top: 15, right: 25, left: 10, bottom: 5 }}>
                     <defs>
                       <linearGradient id="growthGreen" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#10B981" stopOpacity={0.9} />
-                        <stop offset="100%" stopColor="#10B981" stopOpacity={0.4} />
+                        <stop offset="0%" stopColor="#22c55e" stopOpacity={0.8} />
+                        <stop offset="100%" stopColor="#22c55e" stopOpacity={0.3} />
                       </linearGradient>
                       <linearGradient id="growthRed" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#F43F5E" stopOpacity={0.9} />
-                        <stop offset="100%" stopColor="#F43F5E" stopOpacity={0.4} />
+                        <stop offset="0%" stopColor="#ef4444" stopOpacity={0.8} />
+                        <stop offset="100%" stopColor="#ef4444" stopOpacity={0.3} />
                       </linearGradient>
                     </defs>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.06)" />
-                    <XAxis dataKey="label" stroke="#888888" fontSize={11} tickLine={false} axisLine={false} />
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255, 255, 255, 0.05)" />
+                    <XAxis dataKey="label" stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} style={{ fontFamily: "'IBM Plex Mono', monospace" }} />
                     <YAxis
                       yAxisId="left"
-                      stroke="#888888"
+                      stroke="#64748b"
                       fontSize={11}
                       tickLine={false}
                       axisLine={false}
                       tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
+                      style={{ fontFamily: "'IBM Plex Mono', monospace" }}
                     />
                     <YAxis
                       yAxisId="right"
                       orientation="right"
-                      stroke="#06B6D4"
+                      stroke="#64748b"
                       fontSize={11}
                       tickLine={false}
                       axisLine={false}
                       tickFormatter={(v) => `${v.toFixed(1)}%`}
+                      style={{ fontFamily: "'IBM Plex Mono', monospace" }}
                     />
                     <Tooltip
                       content={({ active, payload, label }) => {
@@ -507,46 +509,46 @@ export function MonthlyPortfolioGrowthChart({
                         const data = payload[0]?.payload;
                         if (!data || !data.hasData) {
                           return (
-                            <div className="bg-[#0f172a] border border-white/10 p-3 rounded-xl shadow-2xl text-xs text-white">
-                              <p className="font-bold text-white/70">{label}</p>
-                              <p className="text-white/40 italic mt-1">No data recorded</p>
+                            <div className="bg-[#242932] border border-[rgba(255,255,255,0.1)] p-3 rounded-[8px] shadow-xl text-xs text-[#f1f5f9] font-mono [font-feature-settings:'tnum']">
+                              <p className="font-semibold text-[#94a3b8]">{label}</p>
+                              <p className="text-[#64748b] italic mt-1">No data recorded</p>
                             </div>
                           );
                         }
                         const gVal = data.growthValue ?? 0;
                         const gPct = data.growthPercent ?? 0;
                         return (
-                          <div className="bg-[#0f172a] border border-white/10 p-3.5 rounded-xl shadow-2xl text-xs text-white space-y-2 min-w-[220px]">
-                            <div className="flex items-center justify-between border-b border-white/10 pb-1.5 font-bold">
+                          <div className="bg-[#242932] border border-[rgba(255,255,255,0.1)] p-3 rounded-[8px] shadow-xl text-xs text-[#f1f5f9] space-y-2 min-w-[220px] font-mono [font-feature-settings:'tnum']">
+                            <div className="flex items-center justify-between border-b border-[rgba(255,255,255,0.07)] pb-1.5 font-semibold">
                               <span>{data.month} {data.financialYear}</span>
-                              <span className={gVal >= 0 ? "text-emerald-400" : "text-rose-400"}>
+                              <span className={gVal >= 0 ? "text-[#22c55e]" : "text-[#ef4444]"}>
                                 {fmtPct(gPct)}
                               </span>
                             </div>
-                            <div className="space-y-1 text-white/70">
+                            <div className="space-y-1 text-[#94a3b8]">
                               <div className="flex justify-between">
                                 <span>Organic Growth:</span>
-                                <span className={`font-bold ${gVal >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
+                                <span className={`font-semibold ${gVal >= 0 ? "text-[#22c55e]" : "text-[#ef4444]"}`}>
                                   {gVal >= 0 ? "+" : ""}Rs. {fmt(gVal)}
                                 </span>
                               </div>
                               <div className="flex justify-between">
                                 <span>End Market Value:</span>
-                                <span className="font-medium text-white">Rs. {fmt(data.endMarketValue)}</span>
+                                <span className="font-medium text-[#f1f5f9]">Rs. {fmt(data.endMarketValue)}</span>
                               </div>
                               <div className="flex justify-between">
                                 <span>Start Market Value:</span>
-                                <span className="font-medium text-white/80">Rs. {fmt(data.startMarketValue)}</span>
+                                <span className="font-medium text-[#94a3b8]">Rs. {fmt(data.startMarketValue)}</span>
                               </div>
                               <div className="flex justify-between">
                                 <span>Net Invested:</span>
-                                <span className={data.netInvested >= 0 ? "text-cyan-400" : "text-amber-400"}>
+                                <span className={data.netInvested >= 0 ? "text-[#38bdf8]" : "text-[#eab308]"}>
                                   {data.netInvested >= 0 ? "+" : ""}Rs. {fmt(data.netInvested)}
                                 </span>
                               </div>
-                              <div className="flex justify-between pt-1 border-t border-white/5 text-[11px] text-white/50">
+                              <div className="flex justify-between pt-1 border-t border-[rgba(255,255,255,0.07)] text-[11px] text-[#64748b]">
                                 <span>Cumulative to date:</span>
-                                <span className="font-semibold text-white/90">Rs. {fmt(data.cumulativeGrowth)}</span>
+                                <span className="font-semibold text-[#f1f5f9]">Rs. {fmt(data.cumulativeGrowth)}</span>
                               </div>
                             </div>
                           </div>
@@ -556,10 +558,10 @@ export function MonthlyPortfolioGrowthChart({
                     <Legend
                       verticalAlign="top"
                       height={36}
-                      formatter={(val) => <span className="text-xs text-white/70">{val}</span>}
+                      wrapperStyle={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: "11px", color: "#94a3b8" }}
                     />
-                    <ReferenceLine yAxisId="left" y={0} stroke="rgba(255,255,255,0.2)" strokeDasharray="3 3" />
-                    <Bar yAxisId="left" dataKey="growthValue" name="Portfolio Growth (Rs.)" radius={[6, 6, 0, 0]}>
+                    <ReferenceLine yAxisId="left" y={0} stroke="rgba(255, 255, 255, 0.1)" strokeDasharray="3 3" />
+                    <Bar yAxisId="left" dataKey="growthValue" name="Portfolio Growth (Rs.)" radius={[4, 4, 0, 0]}>
                       {growthData.map((entry, idx) => (
                         <Cell
                           key={idx}
@@ -572,10 +574,10 @@ export function MonthlyPortfolioGrowthChart({
                       type="monotone"
                       dataKey="growthPercent"
                       name="Growth (%)"
-                      stroke="#06B6D4"
-                      strokeWidth={2.5}
-                      dot={{ r: 3.5, fill: "#06B6D4" }}
-                      activeDot={{ r: 6, fill: "#06B6D4" }}
+                      stroke="#38bdf8"
+                      strokeWidth={2}
+                      dot={{ r: 3, fill: "#38bdf8" }}
+                      activeDot={{ r: 5, fill: "#38bdf8" }}
                     />
                   </ComposedChart>
                 )}
@@ -583,31 +585,33 @@ export function MonthlyPortfolioGrowthChart({
                 {/* 2. GROWTH (RS.) VIEW: Pure Bar Chart */}
                 {activeView === "growth_rs" && (
                   <BarChart data={growthData} margin={{ top: 15, right: 15, left: 10, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.06)" />
-                    <XAxis dataKey="label" stroke="#888888" fontSize={11} tickLine={false} axisLine={false} />
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255, 255, 255, 0.05)" />
+                    <XAxis dataKey="label" stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} style={{ fontFamily: "'IBM Plex Mono', monospace" }} />
                     <YAxis
-                      stroke="#888888"
+                      stroke="#64748b"
                       fontSize={11}
                       tickLine={false}
                       axisLine={false}
                       tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
+                      style={{ fontFamily: "'IBM Plex Mono', monospace" }}
                     />
                     <Tooltip
-                      cursor={{ fill: "rgba(255,255,255,0.04)" }}
+                      cursor={{ fill: "rgba(255, 255, 255, 0.04)" }}
                       contentStyle={{
-                        backgroundColor: "#0f172a",
-                        borderColor: "rgba(255,255,255,0.1)",
-                        borderRadius: "12px",
-                        color: "#fff",
+                        backgroundColor: "#242932",
+                        borderColor: "rgba(255, 255, 255, 0.1)",
+                        borderRadius: "8px",
+                        color: "#f1f5f9",
+                        fontFamily: "'IBM Plex Mono', monospace",
                       }}
                       formatter={(val: any) => [`Rs. ${fmt(Number(val))}`, "Portfolio Growth"]}
                     />
-                    <ReferenceLine y={0} stroke="rgba(255,255,255,0.2)" strokeDasharray="3 3" />
-                    <Bar dataKey="growthValue" name="Growth (Rs.)" radius={[6, 6, 0, 0]}>
+                    <ReferenceLine y={0} stroke="rgba(255, 255, 255, 0.1)" strokeDasharray="3 3" />
+                    <Bar dataKey="growthValue" name="Growth (Rs.)" radius={[4, 4, 0, 0]}>
                       {growthData.map((entry, idx) => (
                         <Cell
                           key={idx}
-                          fill={(entry.growthValue ?? 0) >= 0 ? "#10B981" : "#F43F5E"}
+                          fill={(entry.growthValue ?? 0) >= 0 ? "#22c55e" : "#ef4444"}
                         />
                       ))}
                     </Bar>
@@ -617,31 +621,33 @@ export function MonthlyPortfolioGrowthChart({
                 {/* 3. GROWTH (%) VIEW */}
                 {activeView === "growth_pct" && (
                   <BarChart data={growthData} margin={{ top: 15, right: 15, left: 10, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.06)" />
-                    <XAxis dataKey="label" stroke="#888888" fontSize={11} tickLine={false} axisLine={false} />
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255, 255, 255, 0.05)" />
+                    <XAxis dataKey="label" stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} style={{ fontFamily: "'IBM Plex Mono', monospace" }} />
                     <YAxis
-                      stroke="#888888"
+                      stroke="#64748b"
                       fontSize={11}
                       tickLine={false}
                       axisLine={false}
                       tickFormatter={(v) => `${v.toFixed(1)}%`}
+                      style={{ fontFamily: "'IBM Plex Mono', monospace" }}
                     />
                     <Tooltip
-                      cursor={{ fill: "rgba(255,255,255,0.04)" }}
+                      cursor={{ fill: "rgba(255, 255, 255, 0.04)" }}
                       contentStyle={{
-                        backgroundColor: "#0f172a",
-                        borderColor: "rgba(255,255,255,0.1)",
-                        borderRadius: "12px",
-                        color: "#fff",
+                        backgroundColor: "#242932",
+                        borderColor: "rgba(255, 255, 255, 0.1)",
+                        borderRadius: "8px",
+                        color: "#f1f5f9",
+                        fontFamily: "'IBM Plex Mono', monospace",
                       }}
                       formatter={(val: any) => [`${fmtPct(Number(val))}`, "Growth (%)"]}
                     />
-                    <ReferenceLine y={0} stroke="rgba(255,255,255,0.2)" strokeDasharray="3 3" />
-                    <Bar dataKey="growthPercent" name="Growth (%)" radius={[6, 6, 0, 0]}>
+                    <ReferenceLine y={0} stroke="rgba(255, 255, 255, 0.1)" strokeDasharray="3 3" />
+                    <Bar dataKey="growthPercent" name="Growth (%)" radius={[4, 4, 0, 0]}>
                       {growthData.map((entry, idx) => (
                         <Cell
                           key={idx}
-                          fill={(entry.growthPercent ?? 0) >= 0 ? "#10B981" : "#F43F5E"}
+                          fill={(entry.growthPercent ?? 0) >= 0 ? "#22c55e" : "#ef4444"}
                         />
                       ))}
                     </Bar>
@@ -651,32 +657,34 @@ export function MonthlyPortfolioGrowthChart({
                 {/* 4. GROWTH VS CAPITAL FLOW */}
                 {activeView === "growth_vs_flow" && (
                   <BarChart data={growthData} margin={{ top: 15, right: 15, left: 10, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.06)" />
-                    <XAxis dataKey="label" stroke="#888888" fontSize={11} tickLine={false} axisLine={false} />
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255, 255, 255, 0.05)" />
+                    <XAxis dataKey="label" stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} style={{ fontFamily: "'IBM Plex Mono', monospace" }} />
                     <YAxis
-                      stroke="#888888"
+                      stroke="#64748b"
                       fontSize={11}
                       tickLine={false}
                       axisLine={false}
                       tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
+                      style={{ fontFamily: "'IBM Plex Mono', monospace" }}
                     />
                     <Tooltip
                       contentStyle={{
-                        backgroundColor: "#0f172a",
-                        borderColor: "rgba(255,255,255,0.1)",
-                        borderRadius: "12px",
-                        color: "#fff",
+                        backgroundColor: "#242932",
+                        borderColor: "rgba(255, 255, 255, 0.1)",
+                        borderRadius: "8px",
+                        color: "#f1f5f9",
+                        fontFamily: "'IBM Plex Mono', monospace",
                       }}
                       formatter={(val: any, name: any) => [`Rs. ${fmt(Number(val))}`, name]}
                     />
                     <Legend
                       verticalAlign="top"
                       height={36}
-                      formatter={(val) => <span className="text-xs text-white/70">{val}</span>}
+                      wrapperStyle={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: "11px", color: "#94a3b8" }}
                     />
-                    <ReferenceLine y={0} stroke="rgba(255,255,255,0.2)" strokeDasharray="3 3" />
-                    <Bar dataKey="growthValue" name="Organic Growth (Rs.)" fill="#10B981" radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="netInvested" name="Net Capital Inflow (Rs.)" fill="#3B82F6" radius={[4, 4, 0, 0]} />
+                    <ReferenceLine y={0} stroke="rgba(255, 255, 255, 0.1)" strokeDasharray="3 3" />
+                    <Bar dataKey="growthValue" name="Organic Growth (Rs.)" fill="#22c55e" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="netInvested" name="Net Capital Inflow (Rs.)" fill="#38bdf8" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 )}
 
@@ -685,37 +693,39 @@ export function MonthlyPortfolioGrowthChart({
                   <AreaChart data={growthData} margin={{ top: 15, right: 15, left: 10, bottom: 5 }}>
                     <defs>
                       <linearGradient id="cumulGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#10B981" stopOpacity={0.4} />
-                        <stop offset="95%" stopColor="#10B981" stopOpacity={0.0} />
+                        <stop offset="5%" stopColor="#38bdf8" stopOpacity={0.25} />
+                        <stop offset="95%" stopColor="#38bdf8" stopOpacity={0.0} />
                       </linearGradient>
                     </defs>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.06)" />
-                    <XAxis dataKey="label" stroke="#888888" fontSize={11} tickLine={false} axisLine={false} />
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255, 255, 255, 0.05)" />
+                    <XAxis dataKey="label" stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} style={{ fontFamily: "'IBM Plex Mono', monospace" }} />
                     <YAxis
-                      stroke="#888888"
+                      stroke="#64748b"
                       fontSize={11}
                       tickLine={false}
                       axisLine={false}
                       tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
+                      style={{ fontFamily: "'IBM Plex Mono', monospace" }}
                     />
                     <Tooltip
                       contentStyle={{
-                        backgroundColor: "#0f172a",
-                        borderColor: "rgba(255,255,255,0.1)",
-                        borderRadius: "12px",
-                        color: "#fff",
+                        backgroundColor: "#242932",
+                        borderColor: "rgba(255, 255, 255, 0.1)",
+                        borderRadius: "8px",
+                        color: "#f1f5f9",
+                        fontFamily: "'IBM Plex Mono', monospace",
                       }}
                       formatter={(val: any) => [`Rs. ${fmt(Number(val))}`, "Cumulative Market Gain"]}
                     />
-                    <ReferenceLine y={0} stroke="rgba(255,255,255,0.2)" strokeDasharray="3 3" />
+                    <ReferenceLine y={0} stroke="rgba(255, 255, 255, 0.1)" strokeDasharray="3 3" />
                     <Area
                       type="monotone"
                       dataKey="cumulativeGrowth"
                       name="Cumulative Growth"
-                      stroke="#10B981"
-                      strokeWidth={3}
+                      stroke="#38bdf8"
+                      strokeWidth={2}
                       fill="url(#cumulGrad)"
-                      dot={{ r: 4, fill: "#10B981" }}
+                      dot={{ r: 3, fill: "#38bdf8" }}
                     />
                   </AreaChart>
                 )}
