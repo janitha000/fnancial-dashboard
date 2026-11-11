@@ -31,19 +31,17 @@ export function LockScreen() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-primary/20 rounded-full blur-[120px] -z-10 animate-pulse pointer-events-none"></div>
-      
-      <Card className="w-full max-w-md bg-background/60 backdrop-blur-3xl border-white/10 shadow-2xl animate-in zoom-in-95 duration-500">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-[#14171c]">
+      <Card className="w-full max-w-md bg-[#1c2026] border border-[rgba(255,255,255,0.07)] rounded-[10px] shadow-none animate-in zoom-in-95 duration-300">
         <CardHeader className="text-center pb-2">
-          <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
-            <Lock className="w-8 h-8 text-primary" />
+          <div className="mx-auto w-14 h-14 bg-[#38bdf8]/10 rounded-full flex items-center justify-center mb-3 border border-[#38bdf8]/20">
+            <Lock className="w-6 h-6 text-[#38bdf8]" />
           </div>
-          <CardTitle className="text-3xl font-extrabold tracking-tight">Janitha's Vault</CardTitle>
-          <CardDescription className="text-base mt-2">Enter your secure PIN to access your financial data.</CardDescription>
+          <CardTitle className="text-2xl font-semibold tracking-tight text-[#f1f5f9]">Janitha's Vault</CardTitle>
+          <CardDescription className="text-sm mt-1 text-[#94a3b8]">Enter your secure PIN to access your financial data.</CardDescription>
         </CardHeader>
         <CardContent className="mt-4">
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-2">
               <Input 
                 autoFocus
@@ -54,16 +52,16 @@ export function LockScreen() {
                 value={pin}
                 onChange={(e) => setPin(e.target.value)}
                 placeholder="──────" 
-                className="text-center text-3xl tracking-[1em] font-mono h-16 bg-background/50 border-white/10 focus-visible:ring-primary/50"
+                className="text-center text-3xl tracking-[1em] font-mono h-14 bg-[#14171c] border-[rgba(255,255,255,0.07)] text-[#f1f5f9] focus-visible:ring-[#38bdf8]/40"
               />
             </div>
             {error && (
-              <div className="flex items-center gap-2 text-destructive bg-destructive/10 p-3 rounded-lg border border-destructive/20 text-sm font-medium animate-in slide-in-from-top-2">
-                <ShieldAlert className="w-4 h-4" />
+              <div className="flex items-center gap-2 text-[#ef4444] bg-[rgba(239,68,68,0.12)] p-3 rounded-[8px] border border-[rgba(239,68,68,0.2)] text-xs font-mono animate-in slide-in-from-top-2">
+                <ShieldAlert className="w-4 h-4 shrink-0" />
                 {error}
               </div>
             )}
-            <Button type="submit" className="w-full h-12 text-lg font-bold shadow-lg shadow-primary/20" disabled={loading || pin.length < 4}>
+            <Button type="submit" className="w-full h-11 text-base font-semibold bg-[#38bdf8] text-[#0f172a] hover:bg-[#38bdf8]/90" disabled={loading || pin.length < 4}>
               {loading ? "Verifying..." : "Unlock Dashboard"}
             </Button>
           </form>

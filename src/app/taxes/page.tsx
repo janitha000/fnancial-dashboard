@@ -25,18 +25,18 @@ import { AddTaxDialog } from "@/components/taxes/AddTaxDialog";
 
 // ─── Palette ──────────────────────────────────────────────────────────────────
 const USER_COLORS: Record<string, string> = {
-  Janitha: "#818cf8",   // indigo-300
-  Vindya:  "#34d399",   // emerald-400
+  Janitha: "#38bdf8",   // Ice Blue
+  Vindya:  "#22c55e",   // Sage Green
 };
 
 const PASSIVE_COLORS: Record<string, string> = {
-  "LKR FD":    "#f59e0b",
-  "UT":         "#06b6d4",
-  "TBill":      "#a78bfa",
-  "NDB Wealth": "#f472b6",
+  "LKR FD":    "#eab308", // Champagne Ochre
+  "UT":         "#38bdf8", // Ice Blue
+  "TBill":      "#94a3b8", // Slate
+  "NDB Wealth": "#22c55e", // Sage Green
 };
 
-const PIE_COLORS = ["#818cf8", "#34d399", "#f59e0b", "#f472b6"];
+const PIE_COLORS = ["#38bdf8", "#22c55e", "#eab308", "#94a3b8"];
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 function fmt(n: number) {
@@ -53,13 +53,13 @@ function fmtK(n: number) {
 function CustomTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="rounded-lg border border-white/10 bg-card/95 p-3 shadow-xl backdrop-blur-xl text-sm">
-      <p className="font-semibold mb-1.5 text-foreground">{label}</p>
+    <div className="rounded-[8px] border border-[rgba(255,255,255,0.1)] bg-[#242932] p-3 shadow-xl text-xs font-mono [font-feature-settings:'tnum'] text-[#f1f5f9]">
+      <p className="font-semibold mb-1.5 text-[#f1f5f9]">{label}</p>
       {payload.map((p: any) => (
         <div key={p.name} className="flex items-center gap-2">
           <span className="inline-block w-2.5 h-2.5 rounded-sm" style={{ background: p.fill ?? p.color }} />
-          <span className="text-muted-foreground">{p.name}:</span>
-          <span className="font-medium text-foreground">LKR {fmt(p.value)}</span>
+          <span className="text-[#94a3b8]">{p.name}:</span>
+          <span className="font-semibold text-[#f1f5f9]">LKR {fmt(p.value)}</span>
         </div>
       ))}
     </div>
@@ -310,14 +310,14 @@ export default function TaxesPage() {
             ) : (
               <ResponsiveContainer width="100%" height={300}>
                 <BarChart data={monthlyUserData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }} barGap={4}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.06)" />
-                  <XAxis dataKey="month" stroke="#888" fontSize={12} tickLine={false} axisLine={false} />
-                  <YAxis stroke="#888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={fmtK} width={48} />
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
+                  <XAxis dataKey="month" stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} style={{ fontFamily: "'IBM Plex Mono', monospace" }} />
+                  <YAxis stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} tickFormatter={fmtK} width={48} style={{ fontFamily: "'IBM Plex Mono', monospace" }} />
                   <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(255,255,255,0.04)" }} />
-                  <Legend wrapperStyle={{ fontSize: 13 }} />
+                  <Legend wrapperStyle={{ fontSize: 11, fontFamily: "'IBM Plex Mono', monospace", color: "#94a3b8" }} />
                   {/* Janitha Stack */}
                   <Bar name="Janitha (Salary)" dataKey="Janitha_Salary" stackId="Janitha" fill={USER_COLORS["Janitha"]} radius={[0, 0, 0, 0]} maxBarSize={40} />
-                  <Bar name="Janitha (Passive)" dataKey="Janitha_Passive" stackId="Janitha" fill="#f59e0b" radius={[4, 4, 0, 0]} maxBarSize={40} />
+                  <Bar name="Janitha (Passive)" dataKey="Janitha_Passive" stackId="Janitha" fill="#eab308" radius={[4, 4, 0, 0]} maxBarSize={40} />
                   
                   {/* Vindya (Salary only) */}
                   <Bar name="Vindya (Salary)" dataKey="Vindya_Salary" stackId="Vindya" fill={USER_COLORS["Vindya"]} radius={[4, 4, 0, 0]} maxBarSize={40} />
@@ -362,13 +362,14 @@ export default function TaxesPage() {
                     <Tooltip
                       formatter={(v: any) => [`LKR ${fmt(v)}`, ""]}
                       contentStyle={{
-                        backgroundColor: "hsl(var(--card))",
-                        borderColor: "rgba(255,255,255,0.1)",
-                        color: "hsl(var(--foreground))",
+                        backgroundColor: "#242932",
+                        borderColor: "rgba(255, 255, 255, 0.1)",
+                        color: "#f1f5f9",
                         borderRadius: 8,
+                        fontFamily: "'IBM Plex Mono', monospace",
                       }}
                     />
-                    <Legend wrapperStyle={{ fontSize: 13 }} />
+                    <Legend wrapperStyle={{ fontSize: 11, fontFamily: "'IBM Plex Mono', monospace", color: "#94a3b8" }} />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
@@ -379,19 +380,19 @@ export default function TaxesPage() {
 
       {/* ── Passive Income Tax Chart ─────────────────────────────────────── */}
       {passiveMonthlyData.length > 0 && (
-        <Card className="border-white/10">
+        <Card className="border-[rgba(255,255,255,0.07)] bg-[#1c2026] rounded-[10px]">
           <CardHeader>
-            <CardTitle className="text-base font-semibold">Passive Income Tax by Category</CardTitle>
-            <CardDescription>Monthly breakdown — LKR FD, UT, TBill, NDB Wealth</CardDescription>
+            <CardTitle className="text-base font-semibold text-[#f1f5f9]">Passive Income Tax by Category</CardTitle>
+            <CardDescription className="text-xs text-[#94a3b8]">Monthly breakdown — LKR FD, UT, TBill, NDB Wealth</CardDescription>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={280}>
               <BarChart data={passiveMonthlyData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.06)" />
-                <XAxis dataKey="month" stroke="#888" fontSize={12} tickLine={false} axisLine={false} />
-                <YAxis stroke="#888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={fmtK} width={48} />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
+                <XAxis dataKey="month" stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} style={{ fontFamily: "'IBM Plex Mono', monospace" }} />
+                <YAxis stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} tickFormatter={fmtK} width={48} style={{ fontFamily: "'IBM Plex Mono', monospace" }} />
                 <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(255,255,255,0.04)" }} />
-                <Legend wrapperStyle={{ fontSize: 13 }} />
+                <Legend wrapperStyle={{ fontSize: 11, fontFamily: "'IBM Plex Mono', monospace", color: "#94a3b8" }} />
                 {(["LKR FD", "UT", "TBill", "NDB Wealth"] as const).map((cat) => (
                   <Bar key={cat} dataKey={cat} stackId="passive" fill={PASSIVE_COLORS[cat]} maxBarSize={60} />
                 ))}

@@ -42,31 +42,31 @@ export function LoanSummaryWidget() {
   if (!hasLoans) return null;
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-5">
+    <div className="rounded-[10px] border border-[rgba(255,255,255,0.07)] bg-[#1c2026] p-5 shadow-none">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2.5">
-          <div className="p-1.5 rounded-lg bg-primary/15">
-            <Landmark className="h-4 w-4 text-primary" />
+          <div className="p-1.5 rounded-[8px] bg-[#242932]">
+            <Landmark className="h-4 w-4 text-[#38bdf8]" />
           </div>
-          <h2 className="text-base font-semibold text-foreground">
+          <h2 className="text-base font-semibold text-[#f1f5f9]">
             Outstanding Loans
           </h2>
         </div>
         <Link
           href="/loans"
-          className="text-xs text-muted-foreground hover:text-primary transition"
+          className="text-xs text-[#94a3b8] hover:text-[#38bdf8] transition font-medium"
         >
           View all →
         </Link>
       </div>
 
       {/* Total remaining */}
-      <div className="mb-4 rounded-xl bg-white/5 border border-white/10 p-4">
-        <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">
+      <div className="mb-4 rounded-[8px] bg-[#14171c] border border-[rgba(255,255,255,0.04)] p-4">
+        <p className="text-xs text-[#94a3b8] uppercase tracking-wide mb-1 font-medium">
           Total Remaining Capital
         </p>
-        <p className="text-2xl font-bold text-orange-400">{fmt(totalRemaining)}</p>
-        <p className="text-xs text-muted-foreground mt-1">
+        <p className="text-2xl font-bold text-[#eab308] font-mono [font-feature-settings:'tnum']">{fmt(totalRemaining)}</p>
+        <p className="text-xs text-[#64748b] mt-1 font-mono">
           Across {ongoingVehicle.length + activeOD.length} active loan
           {ongoingVehicle.length + activeOD.length !== 1 ? "s" : ""}
         </p>
@@ -79,19 +79,19 @@ export function LoanSummaryWidget() {
           return (
             <div
               key={l.id}
-              className="flex items-center justify-between rounded-lg bg-white/5 px-3 py-2.5"
+              className="flex items-center justify-between rounded-[8px] bg-[#14171c] border border-[rgba(255,255,255,0.04)] px-3 py-2.5"
             >
               <div className="flex items-center gap-2.5">
-                <Car className="h-3.5 w-3.5 text-blue-400 shrink-0" />
-                <span className="text-sm text-foreground truncate max-w-[160px]">
+                <Car className="h-3.5 w-3.5 text-[#38bdf8] shrink-0" />
+                <span className="text-sm text-[#f1f5f9] truncate max-w-[160px]">
                   {l.name}
                 </span>
               </div>
               <div className="text-right">
-                <p className="text-sm font-semibold text-blue-400">
+                <p className="text-sm font-semibold text-[#38bdf8] font-mono [font-feature-settings:'tnum']">
                   {fmt(m.remainingCapital)}
                 </p>
-                <p className="text-[10px] text-muted-foreground">
+                <p className="text-[10px] text-[#94a3b8] font-mono">
                   {m.percentPaid.toFixed(0)}% paid
                 </p>
               </div>
@@ -103,19 +103,19 @@ export function LoanSummaryWidget() {
           return (
             <div
               key={l.id}
-              className="flex items-center justify-between rounded-lg bg-white/5 px-3 py-2.5"
+              className="flex items-center justify-between rounded-[8px] bg-[#14171c] border border-[rgba(255,255,255,0.04)] px-3 py-2.5"
             >
               <div className="flex items-center gap-2.5">
-                <CreditCard className="h-3.5 w-3.5 text-orange-400 shrink-0" />
-                <span className="text-sm text-foreground truncate max-w-[160px]">
+                <CreditCard className="h-3.5 w-3.5 text-[#eab308] shrink-0" />
+                <span className="text-sm text-[#f1f5f9] truncate max-w-[160px]">
                   {l.name}
                 </span>
               </div>
               <div className="text-right">
-                <p className="text-sm font-semibold text-orange-400">
+                <p className="text-sm font-semibold text-[#eab308] font-mono [font-feature-settings:'tnum']">
                   {fmt(m.outstanding)}
                 </p>
-                <p className="text-[10px] text-muted-foreground">
+                <p className="text-[10px] text-[#94a3b8] font-mono">
                   Outstanding
                 </p>
               </div>

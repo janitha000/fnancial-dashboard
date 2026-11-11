@@ -18,31 +18,32 @@ export function Navbar() {
   ];
 
   return (
-    <div className="w-full sticky top-0 z-50 border-b border-white/10 bg-background/60 backdrop-blur-2xl">
+    <div className="w-full sticky top-0 z-50 border-b border-[rgba(255,255,255,0.07)] bg-[#14171c]/90 backdrop-blur-md">
       <nav className="w-full mx-auto max-w-7xl">
         <div className="flex h-16 items-center px-4 md:px-8">
-          <Link href="/" className="font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-primary to-blue-400 text-xl md:text-2xl mr-10 tracking-tighter">
-          Vault
-        </Link>
-        <div className="flex items-center space-x-6 lg:space-x-8">
-          {links.map((link) => {
-            const Icon = link.icon;
-            return (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={`text-base font-medium transition-colors hover:text-primary flex items-center gap-2.5 ${
-                  pathname === link.href ? "text-primary" : "text-muted-foreground"
-                }`}
-              >
-                <Icon className="h-5 w-5 hidden sm:block" />
-                {link.name}
-              </Link>
-            );
-          })}
+          <Link href="/" className="font-semibold text-transparent bg-clip-text bg-gradient-to-r from-[#38bdf8] to-slate-200 text-xl md:text-2xl mr-10 tracking-tight font-sans">
+            Vault
+          </Link>
+          <div className="flex items-center space-x-6 lg:space-x-8">
+            {links.map((link) => {
+              const Icon = link.icon;
+              const isActive = pathname === link.href;
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={`text-sm font-medium transition-colors hover:text-[#38bdf8] flex items-center gap-2 ${
+                    isActive ? "text-[#38bdf8]" : "text-[#94a3b8]"
+                  }`}
+                >
+                  <Icon className="h-4 w-4 hidden sm:block" />
+                  {link.name}
+                </Link>
+              );
+            })}
+          </div>
         </div>
-      </div>
-    </nav>
+      </nav>
     </div>
   );
 }
