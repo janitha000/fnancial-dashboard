@@ -51,7 +51,7 @@ import {
   generateFinancialYears,
 } from "@/context/TaxContext";
 import { AddStockModal } from "./AddStockModal";
-import { StockwiseDashboard } from "./StockwiseDashboard";
+import { MonthlyMetricsDashboard } from "./MonthlyMetricsDashboard";
 import { RealizedGainsDashboard } from "./RealizedGainsDashboard";
 import { DailyPortfolioChart } from "./DailyPortfolioChart";
 import { MonthlyPortfolioGrowthChart } from "./MonthlyPortfolioGrowthChart";
@@ -173,7 +173,7 @@ export function StocksDashboard() {
 
   const [selectedYear, setSelectedYear] = useState(currentFinancialYear());
   const [selectedMonth, setSelectedMonth] = useState<string>(currentFinancialMonth());
-  const [viewMode, setViewMode] = useState<"monthly" | "fy" | "full" | "daily" | "stockwise" | "realized">("monthly");
+  const [viewMode, setViewMode] = useState<"monthly" | "fy" | "full" | "daily" | "metrics" | "realized">("monthly");
 
   // ─── Month Navigation ──────────────────────────────────────────────────────
   const handlePrevMonth = () => {
@@ -555,11 +555,11 @@ export function StocksDashboard() {
               Daily Performance
             </Button>
             <Button
-              variant={viewMode === "stockwise" ? "default" : "ghost"}
-              onClick={() => setViewMode("stockwise")}
+              variant={viewMode === "metrics" ? "default" : "ghost"}
+              onClick={() => setViewMode("metrics")}
               className="h-8 rounded-lg"
             >
-              Stockwise Data
+              Monthly Metrics
             </Button>
             <Button
               variant={viewMode === "realized" ? "default" : "ghost"}
@@ -611,9 +611,9 @@ export function StocksDashboard() {
         />
       )}
 
-      {/* ═══════════════ STOCKWISE VIEW ═══════════════ */}
-      {viewMode === "stockwise" && (
-        <StockwiseDashboard />
+      {/* ═══════════════ MONTHLY METRICS VIEW ═══════════════ */}
+      {viewMode === "metrics" && (
+        <MonthlyMetricsDashboard />
       )}
 
       {/* ═══════════════ REALIZED GAINS VIEW ═══════════════ */}

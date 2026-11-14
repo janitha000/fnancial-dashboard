@@ -90,6 +90,17 @@ export type StockCapitalTransaction = {
   notes?: string;
 };
 
+export type StockMonthlyMetric = {
+  id: string;
+  period: string; // "Before" or "YYYY/MM" e.g. "2025/10"
+  invested?: number | null;
+  totalValue?: number | null;
+  realizedGain?: number | null;
+  realizedGainPct?: number | null;
+  payOut?: number | null;
+  dividend?: number | null;
+};
+
 export type StocksDBState = {
   snapshots: StockSnapshot[];
   dividends: StockDividend[];
@@ -100,6 +111,7 @@ export type StocksDBState = {
   monthlyDailyInputs?: Record<string, string>;
   capitalTransactions?: StockCapitalTransaction[];
   monthlyBaseCosts?: Record<string, number>;
+  monthlyMetrics?: StockMonthlyMetric[];
 };
 
 // ─── KV Persistence ──────────────────────────────────────────────────────────
@@ -121,6 +133,7 @@ export async function getStockData(): Promise<StocksDBState> {
         monthlyDailyInputs: {},
         capitalTransactions: [],
         monthlyBaseCosts: {},
+        monthlyMetrics: [],
       };
     }
     return { 
@@ -133,6 +146,7 @@ export async function getStockData(): Promise<StocksDBState> {
       monthlyDailyInputs: data.monthlyDailyInputs || {},
       capitalTransactions: data.capitalTransactions || [],
       monthlyBaseCosts: data.monthlyBaseCosts || {},
+      monthlyMetrics: data.monthlyMetrics || [],
     };
   } catch (error) {
     console.error("Failed to fetch stock data from KV", error);

@@ -17,6 +17,7 @@ import {
   type StockDividendGain,
   type StockDailyPoint,
   type StockCapitalTransaction,
+  type StockMonthlyMetric,
 } from "@/actions/stocks";
 
 interface StocksContextType {
@@ -29,6 +30,7 @@ interface StocksContextType {
   monthlyDailyInputs: Record<string, string>;
   capitalTransactions: StockCapitalTransaction[];
   monthlyBaseCosts: Record<string, number>;
+  monthlyMetrics: StockMonthlyMetric[];
   isLoaded: boolean;
   upsertSnapshot: (snapshot: Omit<StockSnapshot, "id">) => Promise<void>;
   updateSnapshotDates: (id: string, startDate?: string, endDate?: string) => Promise<void>;
@@ -45,6 +47,8 @@ interface StocksContextType {
   addCapitalTransaction: (tx: Omit<StockCapitalTransaction, "id">) => Promise<void>;
   deleteCapitalTransaction: (id: string) => Promise<void>;
   saveMonthlyBaseCost: (monthKey: string, cost: number | null) => Promise<void>;
+  upsertMonthlyMetric: (metric: Omit<StockMonthlyMetric, "id">) => Promise<void>;
+  deleteMonthlyMetric: (id: string) => Promise<void>;
 }
 
 const StocksContext = createContext<StocksContextType | undefined>(undefined);
@@ -59,6 +63,7 @@ export function StocksProvider({ children }: { children: ReactNode }) {
   const [monthlyDailyInputs, setMonthlyDailyInputs] = useState<Record<string, string>>({});
   const [capitalTransactions, setCapitalTransactions] = useState<StockCapitalTransaction[]>([]);
   const [monthlyBaseCosts, setMonthlyBaseCosts] = useState<Record<string, number>>({});
+  const [monthlyMetrics, setMonthlyMetrics] = useState<StockMonthlyMetric[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
@@ -74,6 +79,7 @@ export function StocksProvider({ children }: { children: ReactNode }) {
         setMonthlyDailyInputs(data.monthlyDailyInputs || {});
         setCapitalTransactions(data.capitalTransactions || []);
         setMonthlyBaseCosts(data.monthlyBaseCosts || {});
+        setMonthlyMetrics(data.monthlyMetrics || []);
       } catch (e) {
         console.error("Failed to load stock data", e);
       } finally {
@@ -92,7 +98,8 @@ export function StocksProvider({ children }: { children: ReactNode }) {
     dPoints: StockDailyPoint[] = dailyPoints,
     mInputs: Record<string, string> = monthlyDailyInputs,
     cTrans: StockCapitalTransaction[] = capitalTransactions,
-    bCosts: Record<string, number> = monthlyBaseCosts
+    bCosts: Record<string, number> = monthlyBaseCosts,
+    mMetrics: StockMonthlyMetric[] = monthlyMetrics
   ) => {
     await saveStockData({
       snapshots: records,
@@ -104,6 +111,7 @@ export function StocksProvider({ children }: { children: ReactNode }) {
       monthlyDailyInputs: mInputs,
       capitalTransactions: cTrans,
       monthlyBaseCosts: bCosts,
+      monthlyMetrics: mMetrics,
     });
   };
 
@@ -243,6 +251,48 @@ export function StocksProvider({ children }: { children: ReactNode }) {
     );
   };
 
+  const upsertMonthlyMetric = async (metric: Omit<StockMonthlyMetric, "id">) => {
+    const existing = monthlyMetrics.find((m) => m.period === metric.period);
+    let updated: StockMonthlyMetric[];
+    if (existing) {
+      updated = monthlyMetrics.map((m) =>
+        m.id === existing.id ? { ...metric, id: existing.id } : m
+      );
+    } else {
+      updated = [...monthlyMetrics, { ...metric, id: crypto.randomUUID() }];
+    }
+    setMonthlyMetrics(updated);
+    await persist(
+      snapshots,
+      dividends,
+      transactions,
+      realizedGains,
+      dividendGains,
+      dailyPoints,
+      monthlyDailyInputs,
+      capitalTransactions,
+      monthlyBaseCosts,
+      updated
+    );
+  };
+
+  const deleteMonthlyMetric = async (id: string) => {
+    const updated = monthlyMetrics.filter((m) => m.id !== id);
+    setMonthlyMetrics(updated);
+    await persist(
+      snapshots,
+      dividends,
+      transactions,
+      realizedGains,
+      dividendGains,
+      dailyPoints,
+      monthlyDailyInputs,
+      capitalTransactions,
+      monthlyBaseCosts,
+      updated
+    );
+  };
+
   return (
     <StocksContext.Provider
       value={{
@@ -255,6 +305,7 @@ export function StocksProvider({ children }: { children: ReactNode }) {
         monthlyDailyInputs,
         capitalTransactions,
         monthlyBaseCosts,
+        monthlyMetrics,
         isLoaded,
         upsertSnapshot,
         updateSnapshotDates,
@@ -271,6 +322,8 @@ export function StocksProvider({ children }: { children: ReactNode }) {
         addCapitalTransaction,
         deleteCapitalTransaction,
         saveMonthlyBaseCost,
+        upsertMonthlyMetric,
+        deleteMonthlyMetric,
       }}
     >
       {children}
