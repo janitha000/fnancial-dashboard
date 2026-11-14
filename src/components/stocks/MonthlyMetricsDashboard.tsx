@@ -47,51 +47,20 @@ import {
   YAxis,
 } from "recharts";
 import {
-  ArrowDownRight,
-  ArrowUpRight,
-  BarChart2,
   Coins,
   Pencil,
   Plus,
   Trash2,
+  TrendingDown,
   TrendingUp,
   Wallet,
 } from "lucide-react";
-
-const MONTH_TO_NUM: Record<string, string> = {
-  Jan: "01",
-  Feb: "02",
-  Mar: "03",
-  Apr: "04",
-  May: "05",
-  Jun: "06",
-  Jul: "07",
-  Aug: "08",
-  Sep: "09",
-  Oct: "10",
-  Nov: "11",
-  Dec: "12",
-};
-
-function fyMonthToPeriod(financialYear: string, month: string): string | null {
-  const parts = financialYear.split("/");
-  if (parts.length !== 2) return null;
-  const startYear = parseInt(parts[0], 10);
-  const endYear = parseInt(parts[1], 10);
-  const mNum = MONTH_TO_NUM[month];
-  if (!mNum || isNaN(startYear) || isNaN(endYear)) return null;
-  const isNextYear = month === "Jan" || month === "Feb" || month === "Mar";
-  const year = isNextYear ? endYear : startYear;
-  return `${year}/${mNum}`;
-}
 
 const fmt = (n: number) =>
   n.toLocaleString("en-US", {
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   });
-
-const fmtPct = (n: number) => `${n >= 0 ? "+" : ""}${n.toFixed(2)}%`;
 
 const fmtRealizedPct = (n: number) => {
   // Match compact display like 0.65% or 1.6%
@@ -142,10 +111,6 @@ const EMPTY_FORM: FormState = {
 
 export function MonthlyMetricsDashboard() {
   const {
-    snapshots,
-    dividends,
-    dividendGains,
-    realizedGains,
     monthlyMetrics,
     upsertMonthlyMetric,
     deleteMonthlyMetric,
@@ -156,100 +121,8 @@ export function MonthlyMetricsDashboard() {
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
 
-  // Derive metrics from existing snapshots, realizedGains, dividends, dividendGains
+  // Use ONLY the provided baseline defaults + saved monthlyMetrics overrides/additions
   const rows: MergedMetricRow[] = useMemo(() => {
-    const derivedMap = new Map<
-      string,
-      {
-        invested: number | null;
-        totalValue: number | null;
-        realizedGain: number | null;
-        realizedGainPct: number | null;
-        payOut: number | null;
-        dividend: number | null;
-      }
-    >();
-
-    const ensure = (period: string) => {
-      if (!derivedMap.has(period)) {
-        derivedMap.set(period, {
-          invested: null,
-          totalValue: null,
-          realizedGain: null,
-          realizedGainPct: null,
-          payOut: null,
-          dividend: null,
-        });
-      }
-      return derivedMap.get(period)!;
-    };
-
-    // 1. Snapshots -> Invested, Total Value, Pay Out
-    snapshots.forEach((snap) => {
-      const period = fyMonthToPeriod(snap.financialYear, snap.month);
-      if (!period) return;
-      const entry = ensure(period);
-      entry.invested = snap.totalCost;
-      entry.totalValue = snap.portfolioValue;
-      if (snap.moneyOut !== 0) {
-        entry.payOut = snap.moneyOut;
-      }
-    });
-
-    // 2. Realized Gains -> grouped by sellDate YYYY/MM
-    const rgGroups = new Map<string, { gain: number; cost: number }>();
-    realizedGains.forEach((g) => {
-      if (!g.sellDate || g.sellDate.length < 7) return;
-      const period = g.sellDate.slice(0, 7).replace("-", "/");
-      const proratedBuyCost =
-        g.buyQuantity > 0
-          ? (g.buyAmount / g.buyQuantity) * g.sellQuantity
-          : g.buyAmount;
-      const absGain = g.sellAmount - proratedBuyCost;
-      const prev = rgGroups.get(period) || { gain: 0, cost: 0 };
-      rgGroups.set(period, {
-        gain: prev.gain + absGain,
-        cost: prev.cost + proratedBuyCost,
-      });
-    });
-    rgGroups.forEach((val, period) => {
-      const entry = ensure(period);
-      entry.realizedGain = val.gain;
-      entry.realizedGainPct = val.cost > 0 ? (val.gain / val.cost) * 100 : null;
-    });
-
-    // 3. Dividends -> prefer dividendGains by date if present for that period, else dividends
-    const divGainsByPeriod = new Map<string, number>();
-    dividendGains.forEach((d) => {
-      if (!d.dividendReceivedDate || d.dividendReceivedDate.length < 7) return;
-      const period = d.dividendReceivedDate.slice(0, 7).replace("-", "/");
-      divGainsByPeriod.set(
-        period,
-        (divGainsByPeriod.get(period) || 0) + d.dividendAmount
-      );
-    });
-
-    const divsByPeriod = new Map<string, number>();
-    dividends.forEach((d) => {
-      const period = fyMonthToPeriod(d.financialYear, d.month);
-      if (!period) return;
-      divsByPeriod.set(period, (divsByPeriod.get(period) || 0) + d.amount);
-    });
-
-    const allDivPeriods = new Set([
-      ...divGainsByPeriod.keys(),
-      ...divsByPeriod.keys(),
-    ]);
-    allDivPeriods.forEach((period) => {
-      const entry = ensure(period);
-      if (divGainsByPeriod.has(period)) {
-        entry.dividend = divGainsByPeriod.get(period)!;
-      } else if (divsByPeriod.has(period)) {
-        entry.dividend = divsByPeriod.get(period)!;
-      }
-    });
-
-    // 4. Merge baseline defaults + saved monthlyMetrics (saved overrides defaults and derived)
     const defaultByPeriod = new Map<string, StockMonthlyMetric>();
     DEFAULT_MONTHLY_METRICS.forEach((m) => defaultByPeriod.set(m.period, m));
 
@@ -258,24 +131,19 @@ export function MonthlyMetricsDashboard() {
 
     const allPeriods = new Set([
       ...defaultByPeriod.keys(),
-      ...derivedMap.keys(),
       ...savedByPeriod.keys(),
     ]);
 
     const merged: MergedMetricRow[] = Array.from(allPeriods).map((period) => {
       const saved = savedByPeriod.get(period);
-      const fallback = defaultByPeriod.get(period);
-      const derived = derivedMap.get(period);
-      const source = saved ?? fallback;
+      const source = saved ?? defaultByPeriod.get(period)!;
 
-      const invested = source ? (source.invested ?? null) : (derived?.invested ?? null);
-      const totalValue = source ? (source.totalValue ?? null) : (derived?.totalValue ?? null);
-      const realizedGain = source ? (source.realizedGain ?? null) : (derived?.realizedGain ?? null);
-      const realizedGainPct = source
-        ? (source.realizedGainPct ?? null)
-        : (derived?.realizedGainPct ?? null);
-      const payOut = source ? (source.payOut ?? null) : (derived?.payOut ?? null);
-      const dividend = source ? (source.dividend ?? null) : (derived?.dividend ?? null);
+      const invested = source.invested ?? null;
+      const totalValue = source.totalValue ?? null;
+      const realizedGain = source.realizedGain ?? null;
+      const realizedGainPct = source.realizedGainPct ?? null;
+      const payOut = source.payOut ?? null;
+      const dividend = source.dividend ?? null;
 
       const gain =
         invested !== null && totalValue !== null ? totalValue - invested : null;
@@ -307,7 +175,7 @@ export function MonthlyMetricsDashboard() {
     });
 
     return merged;
-  }, [snapshots, dividends, dividendGains, realizedGains, monthlyMetrics]);
+  }, [monthlyMetrics]);
 
   // Summary / KPI calculations
   const summary = useMemo(() => {
@@ -319,29 +187,40 @@ export function MonthlyMetricsDashboard() {
         ? withValuation[withValuation.length - 1]
         : null;
 
-    const latestGainPct =
-      latestValuation &&
-      latestValuation.invested &&
-      latestValuation.invested > 0 &&
-      latestValuation.gain !== null
-        ? (latestValuation.gain / latestValuation.invested) * 100
-        : null;
+    let totalRealizedGains = 0;
+    let totalRealizedLosses = 0;
+    let totalRealizedGainCol = 0;
+    let totalPayOut = 0;
+    let totalDividend = 0;
 
-    const totalRealizedGain = rows.reduce(
-      (s, r) => s + (r.realizedGain ?? 0),
-      0
-    );
-    const totalPayOut = rows.reduce((s, r) => s + (r.payOut ?? 0), 0);
-    const totalDividend = rows.reduce((s, r) => s + (r.dividend ?? 0), 0);
+    rows.forEach((r) => {
+      if (r.realizedGain !== null) {
+        totalRealizedGainCol += r.realizedGain;
+        if (r.realizedGain >= 0) totalRealizedGains += r.realizedGain;
+        else totalRealizedLosses += r.realizedGain;
+      }
+      if (r.payOut !== null) {
+        totalPayOut += r.payOut;
+        if (r.payOut >= 0) totalRealizedGains += r.payOut;
+        else totalRealizedLosses += r.payOut;
+      }
+      if (r.dividend !== null) {
+        totalDividend += r.dividend;
+      }
+    });
+
     const grandTotal = totalPayOut + totalDividend;
+    const net = totalRealizedGains + totalRealizedLosses + totalDividend;
 
     return {
       latestValuation,
-      latestGainPct,
-      totalRealizedGain,
+      totalRealizedGains,
+      totalRealizedLosses,
+      totalRealizedGainCol,
       totalPayOut,
       totalDividend,
       grandTotal,
+      net,
     };
   }, [rows]);
 
@@ -371,6 +250,16 @@ export function MonthlyMetricsDashboard() {
           r.invested && r.invested > 0 && r.gain !== null
             ? Number(((r.gain / r.invested) * 100).toFixed(2))
             : null,
+      }));
+  }, [rows]);
+
+  const realizedGainChartData = useMemo(() => {
+    return rows
+      .filter((r) => r.realizedGain !== null)
+      .map((r) => ({
+        period: r.period,
+        "Realized Gain": r.realizedGain as number,
+        "Realized Gain %": r.realizedGainPct,
       }));
   }, [rows]);
 
@@ -461,68 +350,39 @@ export function MonthlyMetricsDashboard() {
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
         <Card className="bg-[#1c2026] border-[rgba(255,255,255,0.07)] rounded-[10px] relative overflow-hidden group shadow-none">
           <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform text-[#94a3b8]">
-            <BarChart2 className="h-20 w-20" />
+            <TrendingUp className="h-20 w-20" />
           </div>
           <CardHeader className="pb-1">
             <CardDescription className="text-[#94a3b8] text-xs uppercase tracking-wider font-medium">
-              Latest Total Value
+              Total Realized Gains
             </CardDescription>
-            <CardTitle className="text-3xl font-bold text-[#f1f5f9] font-mono [font-feature-settings:'tnum']">
-              {summary.latestValuation?.totalValue != null
-                ? fmt(summary.latestValuation.totalValue)
-                : "—"}
+            <CardTitle className="text-3xl font-bold text-[#22c55e] font-mono [font-feature-settings:'tnum']">
+              {fmt(summary.totalRealizedGains)}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-xs text-[#64748b] italic">
-              {summary.latestValuation
-                ? `Invested: ${
-                    summary.latestValuation.invested != null
-                      ? fmt(summary.latestValuation.invested)
-                      : "—"
-                  } (${summary.latestValuation.period})`
-                : "No valuation data yet"}
+              Positive pay outs & realized gains
             </p>
           </CardContent>
         </Card>
 
         <Card className="bg-[#1c2026] border-[rgba(255,255,255,0.07)] rounded-[10px] relative overflow-hidden group shadow-none">
           <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform text-[#94a3b8]">
-            <TrendingUp className="h-20 w-20" />
+            <TrendingDown className="h-20 w-20" />
           </div>
           <CardHeader className="pb-1">
             <CardDescription className="text-[#94a3b8] text-xs uppercase tracking-wider font-medium">
-              Latest Unrealized Gain
+              Total Realized Losses
             </CardDescription>
-            <CardTitle
-              className={`text-3xl font-bold font-mono [font-feature-settings:'tnum'] ${
-                (summary.latestValuation?.gain ?? 0) >= 0
-                  ? "text-[#22c55e]"
-                  : "text-[#ef4444]"
-              }`}
-            >
-              {summary.latestValuation?.gain != null
-                ? fmt(summary.latestValuation.gain)
-                : "—"}
+            <CardTitle className="text-3xl font-bold text-[#ef4444] font-mono [font-feature-settings:'tnum']">
+              {fmt(summary.totalRealizedLosses)}
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {summary.latestGainPct != null && (
-              <span
-                className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded border font-mono [font-feature-settings:'tnum'] ${
-                  summary.latestGainPct >= 0
-                    ? "bg-[rgba(34,197,94,0.12)] text-[#22c55e] border-[rgba(34,197,94,0.2)]"
-                    : "bg-[rgba(239,68,68,0.12)] text-[#ef4444] border-[rgba(239,68,68,0.2)]"
-                }`}
-              >
-                {summary.latestGainPct >= 0 ? (
-                  <ArrowUpRight className="h-3.5 w-3.5" />
-                ) : (
-                  <ArrowDownRight className="h-3.5 w-3.5" />
-                )}
-                {fmtPct(summary.latestGainPct)}
-              </span>
-            )}
+            <p className="text-xs text-[#64748b] italic">
+              Negative pay outs & realized losses
+            </p>
           </CardContent>
         </Card>
 
@@ -532,21 +392,15 @@ export function MonthlyMetricsDashboard() {
           </div>
           <CardHeader className="pb-1">
             <CardDescription className="text-[#94a3b8] text-xs uppercase tracking-wider font-medium">
-              Cumulative Realized Gain
+              Dividends
             </CardDescription>
-            <CardTitle
-              className={`text-3xl font-bold font-mono [font-feature-settings:'tnum'] ${
-                summary.totalRealizedGain >= 0
-                  ? "text-[#22c55e]"
-                  : "text-[#ef4444]"
-              }`}
-            >
-              {fmt(summary.totalRealizedGain)}
+            <CardTitle className="text-3xl font-bold text-[#f1f5f9] font-mono [font-feature-settings:'tnum']">
+              {fmt(summary.totalDividend)}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-xs text-[#64748b] italic">
-              Total realized profits across all periods
+              Total dividends received
             </p>
           </CardContent>
         </Card>
@@ -557,19 +411,19 @@ export function MonthlyMetricsDashboard() {
           </div>
           <CardHeader className="pb-1">
             <CardDescription className="text-[#94a3b8] text-xs uppercase tracking-wider font-medium">
-              Total Cash Returned
+              Net
             </CardDescription>
             <CardTitle
               className={`text-3xl font-bold font-mono [font-feature-settings:'tnum'] ${
-                summary.grandTotal >= 0 ? "text-[#22c55e]" : "text-[#ef4444]"
+                summary.net >= 0 ? "text-[#22c55e]" : "text-[#ef4444]"
               }`}
             >
-              {fmt(summary.grandTotal)}
+              {fmt(summary.net)}
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-xs text-[#64748b] font-mono [font-feature-settings:'tnum']">
-              Pay Out: {fmt(summary.totalPayOut)} | Div: {fmt(summary.totalDividend)}
+            <p className="text-xs text-[#64748b] italic">
+              Realized gains + losses + dividends
             </p>
           </CardContent>
         </Card>
@@ -731,6 +585,59 @@ export function MonthlyMetricsDashboard() {
               </CardContent>
             </Card>
           </div>
+
+          {realizedGainChartData.length > 0 && (
+            <Card className="bg-[#1c2026] border-[rgba(255,255,255,0.07)] rounded-[10px] shadow-none">
+              <CardHeader>
+                <CardTitle>Realized Gain</CardTitle>
+                <CardDescription>
+                  Monthly realized gains across periods
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={realizedGainChartData}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
+                    <XAxis dataKey="period" stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} className="font-mono" />
+                    <YAxis
+                      stroke="#64748b"
+                      fontSize={11}
+                      tickLine={false}
+                      axisLine={false}
+                      className="font-mono"
+                      tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
+                    />
+                    <Tooltip
+                      itemStyle={{ color: "#f1f5f9", fontFamily: "var(--font-ibm-plex-mono)" }}
+                      labelStyle={{ color: "#94a3b8", fontFamily: "var(--font-ibm-plex-mono)" }}
+                      contentStyle={{
+                        backgroundColor: "#242932",
+                        borderColor: "rgba(255,255,255,0.1)",
+                        borderRadius: "8px",
+                      }}
+                      formatter={(val: any, _name: any, props: any) => {
+                        const pct = props?.payload?.["Realized Gain %"];
+                        const formattedVal = fmt(Number(val));
+                        return [
+                          pct != null ? `${formattedVal} (${fmtRealizedPct(pct)})` : formattedVal,
+                          "Realized Gain",
+                        ];
+                      }}
+                    />
+                    <ReferenceLine y={0} stroke="rgba(255,255,255,0.15)" />
+                    <Bar dataKey="Realized Gain" radius={[3, 3, 0, 0]} maxBarSize={64}>
+                      {realizedGainChartData.map((entry, idx) => (
+                        <Cell
+                          key={idx}
+                          fill={entry["Realized Gain"] >= 0 ? "#22c55e" : "#ef4444"}
+                        />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          )}
         </div>
       )}
 
@@ -887,12 +794,12 @@ export function MonthlyMetricsDashboard() {
                     </TableCell>
                     <TableCell
                       className={`text-right font-mono [font-feature-settings:'tnum'] font-bold ${
-                        summary.totalRealizedGain >= 0
+                        summary.totalRealizedGainCol >= 0
                           ? "text-[#22c55e]"
                           : "text-[#ef4444]"
                       }`}
                     >
-                      {fmt(summary.totalRealizedGain)}
+                      {fmt(summary.totalRealizedGainCol)}
                     </TableCell>
                     <TableCell
                       className={`text-right font-mono [font-feature-settings:'tnum'] font-bold ${
