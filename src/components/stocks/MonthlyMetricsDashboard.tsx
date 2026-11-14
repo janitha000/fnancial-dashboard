@@ -215,20 +215,6 @@ export function MonthlyMetricsDashboard() {
   }, [rows]);
 
   // Chart datasets
-  const valuationChartData = useMemo(() => {
-    return rows
-      .filter(
-        (r) =>
-          r.period !== "Before" &&
-          (r.invested !== null || r.totalValue !== null)
-      )
-      .map((r) => ({
-        period: r.period,
-        Invested: r.invested,
-        "Total Value": r.totalValue,
-      }));
-  }, [rows]);
-
   const growthChartData = useMemo(() => {
     return rows
       .filter((r) => r.period !== "Before" && r.gain !== null)
@@ -483,71 +469,6 @@ export function MonthlyMetricsDashboard() {
       {/* Charts — all full width */}
       {rows.length > 0 && (
         <div className="space-y-6">
-          {valuationChartData.length > 0 && (
-            <Card className="bg-[#1c2026] border-[rgba(255,255,255,0.07)] rounded-[10px] shadow-none">
-              <CardHeader>
-                <CardTitle>Invested vs Total Value</CardTitle>
-                <CardDescription>
-                  Monthly capital invested compared against portfolio market value
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="h-[340px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={valuationChartData}>
-                    <defs>
-                      <linearGradient id="gradMetricsValue" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#38bdf8" stopOpacity={0.25} />
-                        <stop offset="95%" stopColor="#38bdf8" stopOpacity={0} />
-                      </linearGradient>
-                      <linearGradient id="gradMetricsInvested" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#eab308" stopOpacity={0.18} />
-                        <stop offset="95%" stopColor="#eab308" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
-                    <XAxis dataKey="period" stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} className="font-mono" />
-                    <YAxis
-                      stroke="#64748b"
-                      fontSize={11}
-                      tickLine={false}
-                      axisLine={false}
-                      className="font-mono"
-                      tickFormatter={(v) => `${(v / 1_000_000).toFixed(1)}M`}
-                    />
-                    <Tooltip
-                      itemStyle={{ color: "#f1f5f9", fontFamily: "var(--font-ibm-plex-mono)" }}
-                      labelStyle={{ color: "#94a3b8", fontFamily: "var(--font-ibm-plex-mono)" }}
-                      contentStyle={{
-                        backgroundColor: "#242932",
-                        borderColor: "rgba(255,255,255,0.1)",
-                        borderRadius: "8px",
-                      }}
-                      formatter={(val: any) => (val != null ? fmt(Number(val)) : "—")}
-                    />
-                    <Legend />
-                    <Area
-                      type="monotone"
-                      dataKey="Total Value"
-                      stroke="#38bdf8"
-                      strokeWidth={2.5}
-                      fill="url(#gradMetricsValue)"
-                      connectNulls
-                    />
-                    <Area
-                      type="monotone"
-                      dataKey="Invested"
-                      stroke="#eab308"
-                      strokeWidth={2}
-                      strokeDasharray="5 5"
-                      fill="url(#gradMetricsInvested)"
-                      connectNulls
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-          )}
-
           {growthChartData.length > 0 && (
             <>
               <Card className="bg-[#1c2026] border-[rgba(255,255,255,0.07)] rounded-[10px] shadow-none">
