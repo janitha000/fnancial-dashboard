@@ -3,6 +3,7 @@
 import React, { useMemo, useState } from "react";
 import { useStocks } from "@/context/StocksContext";
 import { StockMonthlyMetric } from "@/actions/stocks";
+import { DEFAULT_MONTHLY_METRICS } from "@/lib/stockMetricsDefaults";
 import {
   Card,
   CardContent,
@@ -35,7 +36,10 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
+  Cell,
   Legend,
+  Line,
+  LineChart,
   ReferenceLine,
   ResponsiveContainer,
   Tooltip,
@@ -245,27 +249,33 @@ export function MonthlyMetricsDashboard() {
       }
     });
 
-    // 4. Merge saved monthlyMetrics (saved overrides derived for that period)
+    // 4. Merge baseline defaults + saved monthlyMetrics (saved overrides defaults and derived)
+    const defaultByPeriod = new Map<string, StockMonthlyMetric>();
+    DEFAULT_MONTHLY_METRICS.forEach((m) => defaultByPeriod.set(m.period, m));
+
     const savedByPeriod = new Map<string, StockMonthlyMetric>();
     monthlyMetrics.forEach((m) => savedByPeriod.set(m.period, m));
 
     const allPeriods = new Set([
+      ...defaultByPeriod.keys(),
       ...derivedMap.keys(),
       ...savedByPeriod.keys(),
     ]);
 
     const merged: MergedMetricRow[] = Array.from(allPeriods).map((period) => {
       const saved = savedByPeriod.get(period);
+      const fallback = defaultByPeriod.get(period);
       const derived = derivedMap.get(period);
+      const source = saved ?? fallback;
 
-      const invested = saved ? (saved.invested ?? null) : (derived?.invested ?? null);
-      const totalValue = saved ? (saved.totalValue ?? null) : (derived?.totalValue ?? null);
-      const realizedGain = saved ? (saved.realizedGain ?? null) : (derived?.realizedGain ?? null);
-      const realizedGainPct = saved
-        ? (saved.realizedGainPct ?? null)
+      const invested = source ? (source.invested ?? null) : (derived?.invested ?? null);
+      const totalValue = source ? (source.totalValue ?? null) : (derived?.totalValue ?? null);
+      const realizedGain = source ? (source.realizedGain ?? null) : (derived?.realizedGain ?? null);
+      const realizedGainPct = source
+        ? (source.realizedGainPct ?? null)
         : (derived?.realizedGainPct ?? null);
-      const payOut = saved ? (saved.payOut ?? null) : (derived?.payOut ?? null);
-      const dividend = saved ? (saved.dividend ?? null) : (derived?.dividend ?? null);
+      const payOut = source ? (source.payOut ?? null) : (derived?.payOut ?? null);
+      const dividend = source ? (source.dividend ?? null) : (derived?.dividend ?? null);
 
       const gain =
         invested !== null && totalValue !== null ? totalValue - invested : null;
@@ -285,7 +295,7 @@ export function MonthlyMetricsDashboard() {
         payOut,
         dividend,
         total,
-        isSaved: Boolean(saved),
+        isSaved: Boolean(saved && !saved.id.startsWith("default-")),
       };
     });
 
@@ -351,19 +361,16 @@ export function MonthlyMetricsDashboard() {
       }));
   }, [rows]);
 
-  const cashFlowChartData = useMemo(() => {
+  const growthChartData = useMemo(() => {
     return rows
-      .filter(
-        (r) =>
-          r.payOut !== null ||
-          r.dividend !== null ||
-          r.realizedGain !== null
-      )
+      .filter((r) => r.period !== "Before" && r.gain !== null)
       .map((r) => ({
         period: r.period,
-        "Pay Out": r.payOut ?? 0,
-        Dividend: r.dividend ?? 0,
-        "Realized Gain": r.realizedGain ?? 0,
+        Gain: r.gain as number,
+        "Gain %":
+          r.invested && r.invested > 0 && r.gain !== null
+            ? Number(((r.gain / r.invested) * 100).toFixed(2))
+            : null,
       }));
   }, [rows]);
 
@@ -570,7 +577,7 @@ export function MonthlyMetricsDashboard() {
 
       {/* Charts */}
       {rows.length > 0 && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="space-y-6">
           <Card className="bg-[#1c2026] border-[rgba(255,255,255,0.07)] rounded-[10px] shadow-none">
             <CardHeader>
               <CardTitle>Invested vs Total Value</CardTitle>
@@ -634,45 +641,96 @@ export function MonthlyMetricsDashboard() {
             </CardContent>
           </Card>
 
-          <Card className="bg-[#1c2026] border-[rgba(255,255,255,0.07)] rounded-[10px] shadow-none">
-            <CardHeader>
-              <CardTitle>Realized Gains, Pay Out & Dividends</CardTitle>
-              <CardDescription>
-                Monthly cash flows and realized profits across periods
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="h-[320px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={cashFlowChartData}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
-                  <XAxis dataKey="period" stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} className="font-mono" />
-                  <YAxis
-                    stroke="#64748b"
-                    fontSize={11}
-                    tickLine={false}
-                    axisLine={false}
-                    className="font-mono"
-                    tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
-                  />
-                  <Tooltip
-                    itemStyle={{ color: "#f1f5f9", fontFamily: "var(--font-ibm-plex-mono)" }}
-                    labelStyle={{ color: "#94a3b8", fontFamily: "var(--font-ibm-plex-mono)" }}
-                    contentStyle={{
-                      backgroundColor: "#242932",
-                      borderColor: "rgba(255,255,255,0.1)",
-                      borderRadius: "8px",
-                    }}
-                    formatter={(val: any) => fmt(Number(val))}
-                  />
-                  <Legend />
-                  <ReferenceLine y={0} stroke="rgba(255,255,255,0.1)" />
-                  <Bar dataKey="Realized Gain" fill="#38bdf8" radius={[3, 3, 0, 0]} />
-                  <Bar dataKey="Pay Out" fill="#22c55e" radius={[3, 3, 0, 0]} />
-                  <Bar dataKey="Dividend" fill="#a855f7" radius={[3, 3, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card className="bg-[#1c2026] border-[rgba(255,255,255,0.07)] rounded-[10px] shadow-none">
+              <CardHeader>
+                <CardTitle>Portfolio Growth (Value)</CardTitle>
+                <CardDescription>
+                  Monthly unrealized gain/loss (Total Value − Invested)
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="h-[320px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={growthChartData}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
+                    <XAxis dataKey="period" stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} className="font-mono" />
+                    <YAxis
+                      stroke="#64748b"
+                      fontSize={11}
+                      tickLine={false}
+                      axisLine={false}
+                      className="font-mono"
+                      tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
+                    />
+                    <Tooltip
+                      itemStyle={{ color: "#f1f5f9", fontFamily: "var(--font-ibm-plex-mono)" }}
+                      labelStyle={{ color: "#94a3b8", fontFamily: "var(--font-ibm-plex-mono)" }}
+                      contentStyle={{
+                        backgroundColor: "#242932",
+                        borderColor: "rgba(255,255,255,0.1)",
+                        borderRadius: "8px",
+                      }}
+                      formatter={(val: any) => [fmt(Number(val)), "Gain"]}
+                    />
+                    <ReferenceLine y={0} stroke="rgba(255,255,255,0.15)" />
+                    <Bar dataKey="Gain" radius={[3, 3, 0, 0]}>
+                      {growthChartData.map((entry, idx) => (
+                        <Cell
+                          key={idx}
+                          fill={entry.Gain >= 0 ? "#22c55e" : "#ef4444"}
+                        />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-[#1c2026] border-[rgba(255,255,255,0.07)] rounded-[10px] shadow-none">
+              <CardHeader>
+                <CardTitle>Portfolio Growth (%)</CardTitle>
+                <CardDescription>
+                  Monthly gain/loss percentage against Invested capital
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="h-[320px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={growthChartData}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
+                    <XAxis dataKey="period" stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} className="font-mono" />
+                    <YAxis
+                      stroke="#64748b"
+                      fontSize={11}
+                      tickLine={false}
+                      axisLine={false}
+                      className="font-mono"
+                      tickFormatter={(v) => `${Number(v).toFixed(1)}%`}
+                    />
+                    <Tooltip
+                      itemStyle={{ color: "#f1f5f9", fontFamily: "var(--font-ibm-plex-mono)" }}
+                      labelStyle={{ color: "#94a3b8", fontFamily: "var(--font-ibm-plex-mono)" }}
+                      contentStyle={{
+                        backgroundColor: "#242932",
+                        borderColor: "rgba(255,255,255,0.1)",
+                        borderRadius: "8px",
+                      }}
+                      formatter={(val: any) => [`${Number(val).toFixed(2)}%`, "Gain %"]}
+                    />
+                    <ReferenceLine y={0} stroke="rgba(255,255,255,0.15)" strokeDasharray="3 3" />
+                    <Line
+                      type="monotone"
+                      dataKey="Gain %"
+                      stroke="#38bdf8"
+                      strokeWidth={2.5}
+                      dot={{ r: 4, fill: "#38bdf8" }}
+                      activeDot={{ r: 6 }}
+                      connectNulls
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       )}
 
