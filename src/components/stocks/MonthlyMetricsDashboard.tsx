@@ -2,8 +2,6 @@
 
 import React, { useMemo, useState } from "react";
 import { useStocks } from "@/context/StocksContext";
-import { StockMonthlyMetric } from "@/actions/stocks";
-import { DEFAULT_MONTHLY_METRICS } from "@/lib/stockMetricsDefaults";
 import {
   Card,
   CardContent,
@@ -33,10 +31,7 @@ import { Label } from "@/components/ui/label";
 import {
   Area,
   AreaChart,
-  Bar,
-  BarChart,
   CartesianGrid,
-  Cell,
   Legend,
   Line,
   LineChart,
@@ -47,7 +42,9 @@ import {
   YAxis,
 } from "recharts";
 import {
+  BarChart2,
   Coins,
+  Landmark,
   Pencil,
   Plus,
   Trash2,
@@ -63,7 +60,6 @@ const fmt = (n: number) =>
   });
 
 const fmtRealizedPct = (n: number) => {
-  // Match compact display like 0.65% or 1.6%
   const rounded = Number(n.toFixed(2));
   return `${rounded}%`;
 };
@@ -75,8 +71,17 @@ function parseOptionalNumber(raw: string): number | null {
   return isNaN(val) ? null : val;
 }
 
+function getSplitOffset(values: number[]): number {
+  if (values.length === 0) return 0;
+  const max = Math.max(...values);
+  const min = Math.min(...values);
+  if (max <= 0) return 0;
+  if (min >= 0) return 1;
+  return max / (max - min);
+}
+
 type MergedMetricRow = {
-  id?: string;
+  id: string;
   period: string;
   invested: number | null;
   totalValue: number | null;
@@ -86,7 +91,6 @@ type MergedMetricRow = {
   payOut: number | null;
   dividend: number | null;
   total: number | null;
-  isSaved: boolean;
 };
 
 type FormState = {
@@ -94,7 +98,6 @@ type FormState = {
   invested: string;
   totalValue: string;
   realizedGain: string;
-  realizedGainPct: string;
   payOut: string;
   dividend: string;
 };
@@ -104,57 +107,40 @@ const EMPTY_FORM: FormState = {
   invested: "",
   totalValue: "",
   realizedGain: "",
-  realizedGainPct: "",
   payOut: "",
   dividend: "",
 };
 
 export function MonthlyMetricsDashboard() {
-  const {
-    monthlyMetrics,
-    upsertMonthlyMetric,
-    deleteMonthlyMetric,
-  } = useStocks();
+  const { monthlyMetrics, upsertMonthlyMetric, deleteMonthlyMetric } = useStocks();
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingPeriod, setEditingPeriod] = useState<string | null>(null);
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
 
-  // Use ONLY the provided baseline defaults + saved monthlyMetrics overrides/additions
   const rows: MergedMetricRow[] = useMemo(() => {
-    const defaultByPeriod = new Map<string, StockMonthlyMetric>();
-    DEFAULT_MONTHLY_METRICS.forEach((m) => defaultByPeriod.set(m.period, m));
-
-    const savedByPeriod = new Map<string, StockMonthlyMetric>();
-    monthlyMetrics.forEach((m) => savedByPeriod.set(m.period, m));
-
-    const allPeriods = new Set([
-      ...defaultByPeriod.keys(),
-      ...savedByPeriod.keys(),
-    ]);
-
-    const merged: MergedMetricRow[] = Array.from(allPeriods).map((period) => {
-      const saved = savedByPeriod.get(period);
-      const source = saved ?? defaultByPeriod.get(period)!;
-
-      const invested = source.invested ?? null;
-      const totalValue = source.totalValue ?? null;
-      const realizedGain = source.realizedGain ?? null;
-      const realizedGainPct = source.realizedGainPct ?? null;
-      const payOut = source.payOut ?? null;
-      const dividend = source.dividend ?? null;
+    const mapped: MergedMetricRow[] = monthlyMetrics.map((m) => {
+      const invested = m.invested ?? null;
+      const totalValue = m.totalValue ?? null;
+      const realizedGain = m.realizedGain ?? null;
+      const payOut = m.payOut ?? null;
+      const dividend = m.dividend ?? null;
 
       const gain =
         invested !== null && totalValue !== null ? totalValue - invested : null;
+      const realizedGainPct =
+        realizedGain !== null && invested !== null && invested > 0
+          ? (realizedGain / invested) * 100
+          : null;
       const total =
         payOut !== null || dividend !== null
           ? (payOut ?? 0) + (dividend ?? 0)
           : null;
 
       return {
-        id: saved?.id,
-        period,
+        id: m.id,
+        period: m.period,
         invested,
         totalValue,
         gain,
@@ -163,29 +149,33 @@ export function MonthlyMetricsDashboard() {
         payOut,
         dividend,
         total,
-        isSaved: Boolean(saved && !saved.id.startsWith("default-")),
       };
     });
 
-    // Sort: "Before" first, then chronological YYYY/MM
-    merged.sort((a, b) => {
+    mapped.sort((a, b) => {
       if (a.period === "Before") return -1;
       if (b.period === "Before") return 1;
       return a.period.localeCompare(b.period);
     });
 
-    return merged;
+    return mapped;
   }, [monthlyMetrics]);
 
   // Summary / KPI calculations
   const summary = useMemo(() => {
+    const withTotalValue = rows.filter((r) => r.totalValue !== null);
+    const latestTotalValueRow =
+      withTotalValue.length > 0 ? withTotalValue[withTotalValue.length - 1] : null;
+
+    const withInvested = rows.filter((r) => r.invested !== null);
+    const latestInvestedRow =
+      withInvested.length > 0 ? withInvested[withInvested.length - 1] : null;
+
     const withValuation = rows.filter(
       (r) => r.invested !== null && r.totalValue !== null
     );
     const latestValuation =
-      withValuation.length > 0
-        ? withValuation[withValuation.length - 1]
-        : null;
+      withValuation.length > 0 ? withValuation[withValuation.length - 1] : null;
 
     let totalRealizedGains = 0;
     let totalRealizedLosses = 0;
@@ -209,17 +199,17 @@ export function MonthlyMetricsDashboard() {
       }
     });
 
-    const grandTotal = totalPayOut + totalDividend;
     const net = totalRealizedGains + totalRealizedLosses + totalDividend;
 
     return {
+      latestTotalValueRow,
+      latestInvestedRow,
       latestValuation,
       totalRealizedGains,
       totalRealizedLosses,
       totalRealizedGainCol,
       totalPayOut,
       totalDividend,
-      grandTotal,
       net,
     };
   }, [rows]);
@@ -236,7 +226,6 @@ export function MonthlyMetricsDashboard() {
         period: r.period,
         Invested: r.invested,
         "Total Value": r.totalValue,
-        Gain: r.gain,
       }));
   }, [rows]);
 
@@ -253,13 +242,31 @@ export function MonthlyMetricsDashboard() {
       }));
   }, [rows]);
 
+  const gainValueOffset = useMemo(
+    () => getSplitOffset(growthChartData.map((d) => d.Gain)),
+    [growthChartData]
+  );
+
+  const gainPctOffset = useMemo(
+    () =>
+      getSplitOffset(
+        growthChartData
+          .map((d) => d["Gain %"])
+          .filter((v): v is number => v !== null)
+      ),
+    [growthChartData]
+  );
+
   const realizedGainChartData = useMemo(() => {
     return rows
       .filter((r) => r.realizedGain !== null)
       .map((r) => ({
         period: r.period,
         "Realized Gain": r.realizedGain as number,
-        "Realized Gain %": r.realizedGainPct,
+        "Realized Gain %":
+          r.realizedGainPct !== null
+            ? Number(r.realizedGainPct.toFixed(2))
+            : null,
       }));
   }, [rows]);
 
@@ -284,8 +291,6 @@ export function MonthlyMetricsDashboard() {
       invested: row.invested !== null ? String(row.invested) : "",
       totalValue: row.totalValue !== null ? String(row.totalValue) : "",
       realizedGain: row.realizedGain !== null ? String(row.realizedGain) : "",
-      realizedGainPct:
-        row.realizedGainPct !== null ? String(row.realizedGainPct) : "",
       payOut: row.payOut !== null ? String(row.payOut) : "",
       dividend: row.dividend !== null ? String(row.dividend) : "",
     });
@@ -304,7 +309,7 @@ export function MonthlyMetricsDashboard() {
         invested: parseOptionalNumber(form.invested),
         totalValue: parseOptionalNumber(form.totalValue),
         realizedGain: parseOptionalNumber(form.realizedGain),
-        realizedGainPct: parseOptionalNumber(form.realizedGainPct),
+        realizedGainPct: null,
         payOut: parseOptionalNumber(form.payOut),
         dividend: parseOptionalNumber(form.dividend),
       });
@@ -347,7 +352,53 @@ export function MonthlyMetricsDashboard() {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        <Card className="bg-[#1c2026] border-[rgba(255,255,255,0.07)] rounded-[10px] relative overflow-hidden group shadow-none">
+          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform text-[#94a3b8]">
+            <BarChart2 className="h-20 w-20" />
+          </div>
+          <CardHeader className="pb-1">
+            <CardDescription className="text-[#94a3b8] text-xs uppercase tracking-wider font-medium">
+              Latest Portfolio Value
+            </CardDescription>
+            <CardTitle className="text-3xl font-bold text-[#38bdf8] font-mono [font-feature-settings:'tnum']">
+              {summary.latestTotalValueRow?.totalValue != null
+                ? fmt(summary.latestTotalValueRow.totalValue)
+                : "—"}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-xs text-[#64748b] italic">
+              {summary.latestTotalValueRow
+                ? `As of ${summary.latestTotalValueRow.period}`
+                : "No entries yet"}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-[#1c2026] border-[rgba(255,255,255,0.07)] rounded-[10px] relative overflow-hidden group shadow-none">
+          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform text-[#94a3b8]">
+            <Landmark className="h-20 w-20" />
+          </div>
+          <CardHeader className="pb-1">
+            <CardDescription className="text-[#94a3b8] text-xs uppercase tracking-wider font-medium">
+              Latest Invested
+            </CardDescription>
+            <CardTitle className="text-3xl font-bold text-[#eab308] font-mono [font-feature-settings:'tnum']">
+              {summary.latestInvestedRow?.invested != null
+                ? fmt(summary.latestInvestedRow.invested)
+                : "—"}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-xs text-[#64748b] italic">
+              {summary.latestInvestedRow
+                ? `As of ${summary.latestInvestedRow.period}`
+                : "No entries yet"}
+            </p>
+          </CardContent>
+        </Card>
+
         <Card className="bg-[#1c2026] border-[rgba(255,255,255,0.07)] rounded-[10px] relative overflow-hidden group shadow-none">
           <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform text-[#94a3b8]">
             <TrendingUp className="h-20 w-20" />
@@ -429,83 +480,30 @@ export function MonthlyMetricsDashboard() {
         </Card>
       </div>
 
-      {/* Charts */}
+      {/* Charts — all full width */}
       {rows.length > 0 && (
         <div className="space-y-6">
-          <Card className="bg-[#1c2026] border-[rgba(255,255,255,0.07)] rounded-[10px] shadow-none">
-            <CardHeader>
-              <CardTitle>Invested vs Total Value</CardTitle>
-              <CardDescription>
-                Monthly capital invested compared against portfolio market value
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="h-[320px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={valuationChartData}>
-                  <defs>
-                    <linearGradient id="gradMetricsValue" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#38bdf8" stopOpacity={0.25} />
-                      <stop offset="95%" stopColor="#38bdf8" stopOpacity={0} />
-                    </linearGradient>
-                    <linearGradient id="gradMetricsInvested" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#eab308" stopOpacity={0.18} />
-                      <stop offset="95%" stopColor="#eab308" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
-                  <XAxis dataKey="period" stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} className="font-mono" />
-                  <YAxis
-                    stroke="#64748b"
-                    fontSize={11}
-                    tickLine={false}
-                    axisLine={false}
-                    className="font-mono"
-                    tickFormatter={(v) => `${(v / 1_000_000).toFixed(1)}M`}
-                  />
-                  <Tooltip
-                    itemStyle={{ color: "#f1f5f9", fontFamily: "var(--font-ibm-plex-mono)" }}
-                    labelStyle={{ color: "#94a3b8", fontFamily: "var(--font-ibm-plex-mono)" }}
-                    contentStyle={{
-                      backgroundColor: "#242932",
-                      borderColor: "rgba(255,255,255,0.1)",
-                      borderRadius: "8px",
-                    }}
-                    formatter={(val: any) => (val != null ? fmt(Number(val)) : "—")}
-                  />
-                  <Legend />
-                  <Area
-                    type="monotone"
-                    dataKey="Total Value"
-                    stroke="#38bdf8"
-                    strokeWidth={2.5}
-                    fill="url(#gradMetricsValue)"
-                    connectNulls
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="Invested"
-                    stroke="#eab308"
-                    strokeWidth={2}
-                    strokeDasharray="5 5"
-                    fill="url(#gradMetricsInvested)"
-                    connectNulls
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {valuationChartData.length > 0 && (
             <Card className="bg-[#1c2026] border-[rgba(255,255,255,0.07)] rounded-[10px] shadow-none">
               <CardHeader>
-                <CardTitle>Portfolio Growth (Value)</CardTitle>
+                <CardTitle>Invested vs Total Value</CardTitle>
                 <CardDescription>
-                  Monthly unrealized gain/loss (Total Value − Invested)
+                  Monthly capital invested compared against portfolio market value
                 </CardDescription>
               </CardHeader>
-              <CardContent className="h-[320px]">
+              <CardContent className="h-[340px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={growthChartData}>
+                  <AreaChart data={valuationChartData}>
+                    <defs>
+                      <linearGradient id="gradMetricsValue" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#38bdf8" stopOpacity={0.25} />
+                        <stop offset="95%" stopColor="#38bdf8" stopOpacity={0} />
+                      </linearGradient>
+                      <linearGradient id="gradMetricsInvested" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#eab308" stopOpacity={0.18} />
+                        <stop offset="95%" stopColor="#eab308" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
                     <XAxis dataKey="period" stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} className="font-mono" />
                     <YAxis
@@ -514,7 +512,7 @@ export function MonthlyMetricsDashboard() {
                       tickLine={false}
                       axisLine={false}
                       className="font-mono"
-                      tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
+                      tickFormatter={(v) => `${(v / 1_000_000).toFixed(1)}M`}
                     />
                     <Tooltip
                       itemStyle={{ color: "#f1f5f9", fontFamily: "var(--font-ibm-plex-mono)" }}
@@ -524,88 +522,181 @@ export function MonthlyMetricsDashboard() {
                         borderColor: "rgba(255,255,255,0.1)",
                         borderRadius: "8px",
                       }}
-                      formatter={(val: any) => [fmt(Number(val)), "Gain"]}
+                      formatter={(val: any) => (val != null ? fmt(Number(val)) : "—")}
                     />
-                    <ReferenceLine y={0} stroke="rgba(255,255,255,0.15)" />
-                    <Bar dataKey="Gain" radius={[3, 3, 0, 0]}>
-                      {growthChartData.map((entry, idx) => (
-                        <Cell
-                          key={idx}
-                          fill={entry.Gain >= 0 ? "#22c55e" : "#ef4444"}
-                        />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-[#1c2026] border-[rgba(255,255,255,0.07)] rounded-[10px] shadow-none">
-              <CardHeader>
-                <CardTitle>Portfolio Growth (%)</CardTitle>
-                <CardDescription>
-                  Monthly gain/loss percentage against Invested capital
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="h-[320px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={growthChartData}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
-                    <XAxis dataKey="period" stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} className="font-mono" />
-                    <YAxis
-                      stroke="#64748b"
-                      fontSize={11}
-                      tickLine={false}
-                      axisLine={false}
-                      className="font-mono"
-                      tickFormatter={(v) => `${Number(v).toFixed(1)}%`}
-                    />
-                    <Tooltip
-                      itemStyle={{ color: "#f1f5f9", fontFamily: "var(--font-ibm-plex-mono)" }}
-                      labelStyle={{ color: "#94a3b8", fontFamily: "var(--font-ibm-plex-mono)" }}
-                      contentStyle={{
-                        backgroundColor: "#242932",
-                        borderColor: "rgba(255,255,255,0.1)",
-                        borderRadius: "8px",
-                      }}
-                      formatter={(val: any) => [`${Number(val).toFixed(2)}%`, "Gain %"]}
-                    />
-                    <ReferenceLine y={0} stroke="rgba(255,255,255,0.15)" strokeDasharray="3 3" />
-                    <Line
+                    <Legend />
+                    <Area
                       type="monotone"
-                      dataKey="Gain %"
+                      dataKey="Total Value"
                       stroke="#38bdf8"
                       strokeWidth={2.5}
-                      dot={{ r: 4, fill: "#38bdf8" }}
-                      activeDot={{ r: 6 }}
+                      fill="url(#gradMetricsValue)"
                       connectNulls
                     />
-                  </LineChart>
+                    <Area
+                      type="monotone"
+                      dataKey="Invested"
+                      stroke="#eab308"
+                      strokeWidth={2}
+                      strokeDasharray="5 5"
+                      fill="url(#gradMetricsInvested)"
+                      connectNulls
+                    />
+                  </AreaChart>
                 </ResponsiveContainer>
               </CardContent>
             </Card>
-          </div>
+          )}
+
+          {growthChartData.length > 0 && (
+            <>
+              <Card className="bg-[#1c2026] border-[rgba(255,255,255,0.07)] rounded-[10px] shadow-none">
+                <CardHeader>
+                  <CardTitle>Portfolio Growth (Value)</CardTitle>
+                  <CardDescription>
+                    Monthly unrealized gain/loss (Total Value − Invested) relative to 0
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="h-[340px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={growthChartData}>
+                      <defs>
+                        <linearGradient id="splitGainStroke" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset={gainValueOffset} stopColor="#22c55e" stopOpacity={1} />
+                          <stop offset={gainValueOffset} stopColor="#ef4444" stopOpacity={1} />
+                        </linearGradient>
+                        <linearGradient id="splitGainFill" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset={0} stopColor="#22c55e" stopOpacity={0.3} />
+                          <stop offset={gainValueOffset} stopColor="#22c55e" stopOpacity={0.05} />
+                          <stop offset={gainValueOffset} stopColor="#ef4444" stopOpacity={0.05} />
+                          <stop offset={1} stopColor="#ef4444" stopOpacity={0.3} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
+                      <XAxis dataKey="period" stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} className="font-mono" />
+                      <YAxis
+                        stroke="#64748b"
+                        fontSize={11}
+                        tickLine={false}
+                        axisLine={false}
+                        className="font-mono"
+                        tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
+                      />
+                      <Tooltip
+                        itemStyle={{ color: "#f1f5f9", fontFamily: "var(--font-ibm-plex-mono)" }}
+                        labelStyle={{ color: "#94a3b8", fontFamily: "var(--font-ibm-plex-mono)" }}
+                        contentStyle={{
+                          backgroundColor: "#242932",
+                          borderColor: "rgba(255,255,255,0.1)",
+                          borderRadius: "8px",
+                        }}
+                        formatter={(val: any) => [fmt(Number(val)), "Gain"]}
+                      />
+                      <ReferenceLine y={0} stroke="rgba(255,255,255,0.25)" strokeDasharray="3 3" />
+                      <Area
+                        type="monotone"
+                        dataKey="Gain"
+                        baseValue={0}
+                        stroke="url(#splitGainStroke)"
+                        strokeWidth={2.5}
+                        fill="url(#splitGainFill)"
+                        connectNulls
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-[#1c2026] border-[rgba(255,255,255,0.07)] rounded-[10px] shadow-none">
+                <CardHeader>
+                  <CardTitle>Portfolio Growth (%)</CardTitle>
+                  <CardDescription>
+                    Monthly gain/loss percentage against Invested capital relative to 0%
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="h-[340px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={growthChartData}>
+                      <defs>
+                        <linearGradient id="splitGainPctStroke" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset={gainPctOffset} stopColor="#22c55e" stopOpacity={1} />
+                          <stop offset={gainPctOffset} stopColor="#ef4444" stopOpacity={1} />
+                        </linearGradient>
+                        <linearGradient id="splitGainPctFill" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset={0} stopColor="#22c55e" stopOpacity={0.3} />
+                          <stop offset={gainPctOffset} stopColor="#22c55e" stopOpacity={0.05} />
+                          <stop offset={gainPctOffset} stopColor="#ef4444" stopOpacity={0.05} />
+                          <stop offset={1} stopColor="#ef4444" stopOpacity={0.3} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
+                      <XAxis dataKey="period" stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} className="font-mono" />
+                      <YAxis
+                        stroke="#64748b"
+                        fontSize={11}
+                        tickLine={false}
+                        axisLine={false}
+                        className="font-mono"
+                        tickFormatter={(v) => `${Number(v).toFixed(1)}%`}
+                      />
+                      <Tooltip
+                        itemStyle={{ color: "#f1f5f9", fontFamily: "var(--font-ibm-plex-mono)" }}
+                        labelStyle={{ color: "#94a3b8", fontFamily: "var(--font-ibm-plex-mono)" }}
+                        contentStyle={{
+                          backgroundColor: "#242932",
+                          borderColor: "rgba(255,255,255,0.1)",
+                          borderRadius: "8px",
+                        }}
+                        formatter={(val: any) => [`${Number(val).toFixed(2)}%`, "Gain %"]}
+                      />
+                      <ReferenceLine y={0} stroke="rgba(255,255,255,0.25)" strokeDasharray="3 3" />
+                      <Area
+                        type="monotone"
+                        dataKey="Gain %"
+                        baseValue={0}
+                        stroke="url(#splitGainPctStroke)"
+                        strokeWidth={2.5}
+                        fill="url(#splitGainPctFill)"
+                        connectNulls
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+            </>
+          )}
 
           {realizedGainChartData.length > 0 && (
             <Card className="bg-[#1c2026] border-[rgba(255,255,255,0.07)] rounded-[10px] shadow-none">
               <CardHeader>
                 <CardTitle>Realized Gain</CardTitle>
                 <CardDescription>
-                  Monthly realized gains across periods
+                  Monthly realized gains (value & percentage against Invested)
                 </CardDescription>
               </CardHeader>
-              <CardContent className="h-[300px]">
+              <CardContent className="h-[340px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={realizedGainChartData}>
+                  <LineChart data={realizedGainChartData}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
                     <XAxis dataKey="period" stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} className="font-mono" />
                     <YAxis
+                      yAxisId="left"
                       stroke="#64748b"
                       fontSize={11}
                       tickLine={false}
                       axisLine={false}
                       className="font-mono"
                       tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
+                    />
+                    <YAxis
+                      yAxisId="right"
+                      orientation="right"
+                      stroke="#64748b"
+                      fontSize={11}
+                      tickLine={false}
+                      axisLine={false}
+                      className="font-mono"
+                      tickFormatter={(v) => `${Number(v).toFixed(2)}%`}
                     />
                     <Tooltip
                       itemStyle={{ color: "#f1f5f9", fontFamily: "var(--font-ibm-plex-mono)" }}
@@ -615,25 +706,37 @@ export function MonthlyMetricsDashboard() {
                         borderColor: "rgba(255,255,255,0.1)",
                         borderRadius: "8px",
                       }}
-                      formatter={(val: any, _name: any, props: any) => {
-                        const pct = props?.payload?.["Realized Gain %"];
-                        const formattedVal = fmt(Number(val));
-                        return [
-                          pct != null ? `${formattedVal} (${fmtRealizedPct(pct)})` : formattedVal,
-                          "Realized Gain",
-                        ];
+                      formatter={(val: any, name: any) => {
+                        if (name === "Realized Gain %") {
+                          return [`${Number(val).toFixed(2)}%`, name];
+                        }
+                        return [fmt(Number(val)), name];
                       }}
                     />
-                    <ReferenceLine y={0} stroke="rgba(255,255,255,0.15)" />
-                    <Bar dataKey="Realized Gain" radius={[3, 3, 0, 0]} maxBarSize={64}>
-                      {realizedGainChartData.map((entry, idx) => (
-                        <Cell
-                          key={idx}
-                          fill={entry["Realized Gain"] >= 0 ? "#22c55e" : "#ef4444"}
-                        />
-                      ))}
-                    </Bar>
-                  </BarChart>
+                    <Legend />
+                    <ReferenceLine yAxisId="left" y={0} stroke="rgba(255,255,255,0.15)" strokeDasharray="3 3" />
+                    <Line
+                      yAxisId="left"
+                      type="monotone"
+                      dataKey="Realized Gain"
+                      stroke="#22c55e"
+                      strokeWidth={2.5}
+                      dot={{ r: 4, fill: "#22c55e" }}
+                      activeDot={{ r: 6 }}
+                      connectNulls
+                    />
+                    <Line
+                      yAxisId="right"
+                      type="monotone"
+                      dataKey="Realized Gain %"
+                      stroke="#38bdf8"
+                      strokeWidth={2}
+                      strokeDasharray="5 5"
+                      dot={{ r: 4, fill: "#38bdf8" }}
+                      activeDot={{ r: 6 }}
+                      connectNulls
+                    />
+                  </LineChart>
                 </ResponsiveContainer>
               </CardContent>
             </Card>
@@ -646,7 +749,7 @@ export function MonthlyMetricsDashboard() {
         <CardHeader>
           <CardTitle>Monthly Metrics Breakdown</CardTitle>
           <CardDescription>
-            Click edit on any row to override or add values (e.g. Before, Pay Out, Realized Gain, or mid-month Dividends).
+            Add or edit periods manually. Gain, Realized Gain %, and Total are calculated automatically.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -669,7 +772,7 @@ export function MonthlyMetricsDashboard() {
                 {rows.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={9} className="text-center py-10 text-[#64748b]">
-                      No monthly metrics yet. Add a period or add snapshots/realized gains to populate automatically.
+                      No monthly metrics yet. Click &quot;Add / Update Period&quot; to enter your data.
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -746,21 +849,19 @@ export function MonthlyMetricsDashboard() {
                           >
                             <Pencil className="h-3.5 w-3.5" />
                           </Button>
-                          {row.isSaved && row.id && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7 text-[#94a3b8] hover:text-red-400"
-                              onClick={() => {
-                                if (confirm(`Remove saved override for ${row.period}?`)) {
-                                  deleteMonthlyMetric(row.id!);
-                                }
-                              }}
-                              title="Delete saved entry"
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </Button>
-                          )}
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 text-[#94a3b8] hover:text-red-400"
+                            onClick={() => {
+                              if (confirm(`Delete metrics for ${row.period}?`)) {
+                                deleteMonthlyMetric(row.id);
+                              }
+                            }}
+                            title="Delete entry"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -815,12 +916,12 @@ export function MonthlyMetricsDashboard() {
                     </TableCell>
                     <TableCell
                       className={`text-right font-mono [font-feature-settings:'tnum'] font-bold ${
-                        summary.grandTotal >= 0
+                        summary.totalPayOut + summary.totalDividend >= 0
                           ? "text-[#22c55e]"
                           : "text-[#ef4444]"
                       }`}
                     >
-                      {fmt(summary.grandTotal)}
+                      {fmt(summary.totalPayOut + summary.totalDividend)}
                     </TableCell>
                     <TableCell />
                   </TableRow>
@@ -880,31 +981,17 @@ export function MonthlyMetricsDashboard() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <Label htmlFor="metric-realized-gain">Realized Gain</Label>
-                <Input
-                  id="metric-realized-gain"
-                  type="number"
-                  step="any"
-                  value={form.realizedGain}
-                  onChange={(e) => setForm((f) => ({ ...f, realizedGain: e.target.value }))}
-                  placeholder="Optional"
-                  className="bg-background/50 border-white/10 font-mono"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="metric-realized-pct">Realized Gain %</Label>
-                <Input
-                  id="metric-realized-pct"
-                  type="number"
-                  step="any"
-                  value={form.realizedGainPct}
-                  onChange={(e) => setForm((f) => ({ ...f, realizedGainPct: e.target.value }))}
-                  placeholder="e.g. 0.65"
-                  className="bg-background/50 border-white/10 font-mono"
-                />
-              </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="metric-realized-gain">Realized Gain</Label>
+              <Input
+                id="metric-realized-gain"
+                type="number"
+                step="any"
+                value={form.realizedGain}
+                onChange={(e) => setForm((f) => ({ ...f, realizedGain: e.target.value }))}
+                placeholder="Optional"
+                className="bg-background/50 border-white/10 font-mono"
+              />
             </div>
 
             <div className="grid grid-cols-2 gap-4">

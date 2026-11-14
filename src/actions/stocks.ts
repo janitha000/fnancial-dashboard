@@ -1,7 +1,6 @@
 "use server";
 
 import { kv } from "@vercel/kv";
-import { DEFAULT_MONTHLY_METRICS } from "@/lib/stockMetricsDefaults";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -122,7 +121,7 @@ const DB_KEY = "financial_dashboard_stocks_v1";
 export async function getStockData(): Promise<StocksDBState> {
   try {
     const data = await kv.get<StocksDBState | StockSnapshot[]>(DB_KEY);
-    if (!data) return { snapshots: [], dividends: [], monthlyMetrics: DEFAULT_MONTHLY_METRICS };
+    if (!data) return { snapshots: [], dividends: [], monthlyMetrics: [] };
     if (Array.isArray(data)) {
       return {
         snapshots: data,
@@ -134,7 +133,7 @@ export async function getStockData(): Promise<StocksDBState> {
         monthlyDailyInputs: {},
         capitalTransactions: [],
         monthlyBaseCosts: {},
-        monthlyMetrics: DEFAULT_MONTHLY_METRICS,
+        monthlyMetrics: [],
       };
     }
     return { 
@@ -147,11 +146,11 @@ export async function getStockData(): Promise<StocksDBState> {
       monthlyDailyInputs: data.monthlyDailyInputs || {},
       capitalTransactions: data.capitalTransactions || [],
       monthlyBaseCosts: data.monthlyBaseCosts || {},
-      monthlyMetrics: data.monthlyMetrics && data.monthlyMetrics.length > 0 ? data.monthlyMetrics : DEFAULT_MONTHLY_METRICS,
+      monthlyMetrics: data.monthlyMetrics || [],
     };
   } catch (error) {
     console.error("Failed to fetch stock data from KV", error);
-    return { snapshots: [], dividends: [], monthlyMetrics: DEFAULT_MONTHLY_METRICS };
+    return { snapshots: [], dividends: [], monthlyMetrics: [] };
   }
 }
 
